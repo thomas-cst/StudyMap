@@ -1,1 +1,321 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+    --bg-body: #ffffff;
+    --bg-content: #F2F2F2;
+    --bg-dark-blue: #2F4156;
+    --bg-light-blue: #506E91;
+    --bg-white: #ffffff;
+}
+
+body.dark-mode {
+    --bg-body: #0F172A;
+    --bg-content: #F2F2F2;
+    --bg-dark-blue: #0F172A;
+    --bg-light-blue: #2F4156;
+}
+
+html {
+    height: 100%;
+    width: 100%;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-body);
+}
+
+app-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+header {
+    width: 100%;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    padding-left: 20px;
+}
+
+header h1 {
+    color: var(--bg-dark-blue);
+    margin-left: 10px;
+    font-size: 24px;
+}
+
+header img{
+    width : 190px;
+}
+
+.main-container {
+    flex-grow: 1;
+    display: flex;
+    padding: 0 20px 20px 20px;
+    gap: 20px;
+}
+
+.content {
+    flex: 1;
+    background-color: var(--bg-content);
+    border-radius: 20px;
+    display: flex;
+    overflow: hidden;
+}
+
+/* Barre de menu */
+.barre-menu {
+    width: 70px;
+    background-color: var(--bg-dark-blue);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding: 25px 0;
+    border-radius: 20px 0 0 20px;
+}
+
+.menu-haut, .menu-bas{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.menu-haut{
+    gap: 55px;
+    width : 100%;
+}
+
+.menu-bas {
+    gap: 30px;
+    margin-top: auto; 
+    width : 100%;
+}
+
+.barre-menu svg {
+    width: 35px;
+    color: var(--bg-white);
+    pointer-events: none;
+}
+
+#classement, #accueil, #favoris{
+    width : calc(100% - 10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius : 20px 0 0 20px;
+    height : 50px;
+    margin-left: 10px;
+    transition: all 0.2s ease;
+}
+
+#classement:hover, #accueil:hover, #favoris:hover {
+    background-color: var(--bg-content);
+}
+
+#classement:hover svg, #accueil:hover svg, #favoris:hover svg {
+    color: var(--bg-dark-blue);
+}
+
+#classement.active, #accueil.active, #favoris.active {
+    background-color: var(--bg-content);
+}
+
+#classement.active svg, #accueil.active svg, #favoris.active svg {
+    color: var(--bg-dark-blue);
+}
+
+.FenetreCompte {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.contenuFenetreCompte {
+    background-color: var(--bg-light-blue);
+    color: white;
+    padding: 30px;
+    border-radius: 20px;
+    width: 350px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.FenetreCompte.active {
+    display: flex;
+}
+
+.boutonsConnexion {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-login, .btn-signup {
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-login { background-color: white; color: var(--bg-dark-blue); }
+.btn-signup { background-color: transparent; border: 1px solid white; color: white; }
+
+.btn-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+
+/* Contenu des résultats */
+.rechEtRes {
+    flex: 1;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    overflow-y: auto;
+}
+
+/* Barre de recherche */
+.recherches {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-bar {
+    background-color: var(--bg-light-blue);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    width: 70%;
+    gap: 10px;
+    color: var(--bg-white);
+}
+
+.search-bar input {
+    background: transparent;
+    border: none;
+    color: var(--bg-white);
+    outline: none;
+    width: 100%;
+}
+
+.search-bar input::placeholder {
+    color: var(--bg-white);
+}
+
+.filtre-btn {
+    background-color: var(--bg-light-blue);
+    color: var(--bg-white);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.filtre-container {
+    position: relative;
+}
+
+.filtre-menu {
+    display: none;
+    position: absolute;
+    top: 50px;
+    right: 0;
+    width: 200px;
+    background-color: var(--bg-light-blue);
+    color: var(--bg-white);
+    padding: 15px;
+    border-radius: 15px;
+    z-index: 100;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.filtre-menu.active {
+    display: block;
+}
+
+.filtre-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+    font-size: 13px;
+}
+
+.separation {
+    height: 1px;
+    background-color: rgba(255,255,255,0.3);
+    margin-bottom: 15px;
+}
+
+/* résultats de recherche */
+.résultats {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.résultats h2 {
+    font-size: 14px;
+    color: var(--bg-dark-blue);
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.card {
+    width: 100%;
+    height: 120px;
+    background-color: var(--bg-dark-blue);
+    border-radius: 20px;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: scale(1.02);
+}
+
+/* map */
+.map-container {
+    flex: 1;
+    border-radius: 20px;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.icon-sm {
+    width: 20px;
+}
