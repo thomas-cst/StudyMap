@@ -16,17 +16,25 @@ export class FiltreComponent {
 		this.isMenuActive.update(value => !value);
 	}
 
-	updateMin(event: Event) {
-        const val = +(event.target as HTMLInputElement).value;
-        if (val <= this.budgetMax()) {
-            this.budgetMin.set(val);
+    updateMin(event: Event) {
+        const input = event.target as HTMLInputElement;
+        let value = parseInt(input.value);
+
+        if (value >= this.budgetMax()) {
+            value = this.budgetMax() - 10; // rester 10€ en dessous
+            input.value = value.toString(); 
         }
+        this.budgetMin.set(value);
     }
 
     updateMax(event: Event) {
-        const val = +(event.target as HTMLInputElement).value;
-        if (val >= this.budgetMin()) {
-            this.budgetMax.set(val);
+        const input = event.target as HTMLInputElement;
+        let value = parseInt(input.value);
+
+        if (value <= this.budgetMin()) {
+            value = this.budgetMin() + 10; // rester 10€ au dessus
+            input.value = value.toString(); 
         }
+        this.budgetMax.set(value);
     }
 }
