@@ -1,0 +1,27 @@
+:host {
+    display: block; 
+    width: 100%;    
+}
+
+.searchBar {
+    background-color: var(--bg-light-blue);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    width: 70%;
+    gap: 10px;
+    color: var(--bg-white);
+}
+
+.searchBar input {
+    background: transparent;
+    border: none;
+    color: var(--bg-white);
+    outline: none;
+    width: 100%;
+}
+
+.searchBar input::placeholder {
+    color: var(--bg-white);
+}
