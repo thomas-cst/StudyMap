@@ -13,4 +13,8 @@ import { FiltreComponent } from './components/filtre/filtre.component';
 })
 export class App {
   protected readonly title = signal('studyMap');
+
+  protected onThemeToggle() {
+    console.log('Thème changé!');
+  }
 }
