@@ -7,8 +7,21 @@
     <div class="filtre-menu" [class.active]="isMenuActive()">
         <div class="filtre-section">
             <p>budget</p>
-            <span>200€ - 1000€</span>
-            <input type="range" min="200" max="1000">
+            <span>{{ budgetMin() }}€ - {{ budgetMax() }}€</span>
+            
+            <div class="sliderBudget">
+                <input type="range" 
+                    [value]="budgetMin()" 
+                    min="0" max="5000" step="10"
+                    (input)="updateMin($event)"
+                    class="input-min">
+                
+                <input type="range" 
+                    [value]="budgetMax()" 
+                    min="0" max="5000" step="10"
+                    (input)="updateMax($event)"
+                    class="input-max">
+            </div>
         </div>
         <div class="separation"></div>
         <div class="filtre-section">
