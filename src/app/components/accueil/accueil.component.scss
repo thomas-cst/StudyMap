@@ -1,0 +1,22 @@
+:host {
+    display: block;
+    width: 100%;
+    min-height: 100px; 
+}
+
+/* Contenu des résultats */
+.accueil {
+    flex: 1;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    overflow-y: auto;
+}
+
+/* Barre de recherche */
+.recherches {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
