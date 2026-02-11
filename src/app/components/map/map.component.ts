@@ -8,6 +8,7 @@ declare const L: any;
 	styleUrls: ['./map.component.scss'],
 	standalone: true,
 })
+
 export class MapComponent implements AfterViewInit, OnDestroy {
 	@ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef<HTMLDivElement>;
 	private map: any;

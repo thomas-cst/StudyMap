@@ -1,0 +1,27 @@
+<div class="filtre-container">
+    <button class="filtre-btn" (click)="clicBouton()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+        Filtres
+    </button>
+
+    <div class="filtre-menu" [class.active]="isMenuActive()">
+        <div class="filtre-section">
+            <p>budget</p>
+            <span>200€ - 1000€</span>
+            <input type="range" min="200" max="1000">
+        </div>
+        <div class="separation"></div>
+        <div class="filtre-section">
+            <label><input type="checkbox"> évènements</label>
+            <label><input type="checkbox"> sorties</label>
+        </div>
+        <div class="separation"></div>
+        <div class="filtre-section">
+            <p>météo</p>
+            <label><input type="checkbox"> pluvieux</label>
+            <label><input type="checkbox"> ensoleillé</label>
+            <label><input type="checkbox"> froid</label>
+            <label><input type="checkbox"> chaud</label>
+        </div>
+    </div>
+</div>
