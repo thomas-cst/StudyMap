@@ -7,15 +7,17 @@
     <div class="filtre-menu" [class.active]="isMenuActive()">
         <div class="filtre-section">
             <p>budget</p>
-            <span>{{ budgetMin() }}€ - {{ budgetMax() }}€</span>
+            <span>{{ budgetMin() }}€ - {{ budgetMax() }}€+</span>
             
             <div class="sliderBudget">
+                <div class="slider-track"></div>
+                
                 <input type="range" 
                     [value]="budgetMin()" 
                     min="0" max="5000" step="10"
                     (input)="updateMin($event)"
                     class="input-min">
-                
+
                 <input type="range" 
                     [value]="budgetMax()" 
                     min="0" max="5000" step="10"
