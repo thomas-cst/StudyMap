@@ -7,7 +7,7 @@
     <div class="filtre-menu" [class.active]="isMenuActive()">
         <div class="filtre-section">
             <p>budget</p>
-            <span>{{ budgetMin() }}€ - {{ budgetMax() }}€+</span>
+            <span>{{ budgetMin() }}€ - {{budgetMax()}}€{{ budgetMax() == 5000? '+' : ''}}</span>
             
             <div class="sliderBudget">
                 <div class="slider-track"></div>

@@ -63,7 +63,7 @@ input[type="range"] {
     background: none; /* cache la barre de l'input */
     appearance: none; /* Supprime le style par défaut */
     pointer-events: none;
-    z-index: 2;
+    z-index: 1;
     margin: 0;
 
     /* le rond */
