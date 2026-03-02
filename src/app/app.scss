@@ -17,3 +17,13 @@
     transform: scale(0.95);
   }
 }
+// Styles pour le menu haut (accueil, classement, favoris)
+.menu-haut {
+  #accueil,
+  #classement,
+  #favoris {
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+  }
+}
