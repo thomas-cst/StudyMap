@@ -5,10 +5,11 @@ import { MapComponent } from './components/map/map.component';
 import { AccueilComponent } from './components/accueil/accueil.component';
 import { CompteComponent } from './components/compte/compte.component';
 import { FavorisComponent } from './components/favoris/favoris.component';
+import { ClassementComponent } from './components/classement/classement.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CommonModule, MapComponent,  AccueilComponent, CompteComponent, FavorisComponent, CommonModule],
+  imports: [RouterOutlet, CommonModule, MapComponent,  AccueilComponent, CompteComponent, FavorisComponent, ClassementComponent, CommonModule],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -26,7 +27,7 @@ export class App {
   protected closeCompte() {
     this.showCompte.set(false);
   }
-  protected readonly componentActif = signal<'accueil' | 'favoris'>('accueil');
+  protected readonly componentActif = signal<'accueil' | 'favoris' | 'classement'>('accueil');
 
   protected onThemeToggle() {
     if (typeof document === 'undefined') return;
@@ -58,5 +59,9 @@ export class App {
 
   protected afficherAccueil() {
     this.componentActif.set('accueil');
+  }
+
+  protected afficherClassement() {
+    this.componentActif.set('classement');
   }
 }

@@ -1,0 +1,33 @@
+:host {
+    display: block;
+    width: 100%;
+}
+
+/* Contenu des résultats */
+.classement {
+    flex: 1;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    overflow-y: auto;
+    height: 100%;
+}
+
+/* Barre de recherche */
+.recherches {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.classement h2 {
+    font-size: 14px;
+    color: var(--bg-dark-blue);
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.resultats {
+    width: 100%;
+}
