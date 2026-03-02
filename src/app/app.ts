@@ -1,19 +1,32 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { MapComponent } from './components/map/map.component';
 import { AccueilComponent } from './components/accueil/accueil.component';
+import { CompteComponent } from './components/compte/compte.component';
 import { FavorisComponent } from './components/favoris/favoris.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, MapComponent, AccueilComponent, FavorisComponent, CommonModule],
+  imports: [RouterOutlet, CommonModule, MapComponent,  AccueilComponent, CompteComponent, FavorisComponent, CommonModule],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
 export class App {
   protected readonly title = signal('studyMap');
   protected readonly logoSrc = signal('assets/StudyMap.png');
+
+  /** controls visibility of the account popup */
+  protected showCompte = signal(false);
+
+  protected toggleCompte() {
+    this.showCompte.set(!this.showCompte());
+  }
+
+  protected closeCompte() {
+    this.showCompte.set(false);
+  }
   protected readonly componentActif = signal<'accueil' | 'favoris'>('accueil');
 
   protected onThemeToggle() {
