@@ -1,7 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { CommonModule } from '@angular/common';
 import { MapComponent } from './components/map/map.component';
 import { AccueilComponent } from './components/accueil/accueil.component';
 import { CompteComponent } from './components/compte/compte.component';
