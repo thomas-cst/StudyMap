@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 @Component({
   selector: 'app-resultats', 
@@ -8,5 +8,5 @@ import { Component } from '@angular/core';
   styleUrl: './resultats.component.scss'
 })
 export class ResultatsComponent {
-  
+  @Input() menuChoisi: 'accueil' | 'classement' | 'favoris' = 'accueil';
 }
