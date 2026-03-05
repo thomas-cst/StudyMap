@@ -16,6 +16,7 @@
     background-position: center;
     border-radius: 12px;
     display: flex;
+<<<<<<< HEAD
     align-items: flex-end;
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -212,6 +213,12 @@
     margin: 0;
     color: #666;
     font-size: 1em;
+=======
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 15px;
+    width : 100%;
+>>>>>>> 878f5e1c4f3dcf275c2def28398890d3624cec74
 }
 
 
@@ -221,16 +228,23 @@
     background-color: var(--bg-dark-blue);
     border-radius: 20px;
     transition: transform 0.2s;
-}
 
-#ligne{
-    display: flex;
-    align-items: space-between;
-    gap : 10px;
-}
+    //taille spécifique dans les menus
+    &.classement {
+        width: 100%;
+        height: 150px;
+    }
 
-#colonne{
-    display: block;
+    &.favoris {
+        width: 100%;
+        height: 150px;
+    }
+
+    &.accueil {
+        width: calc(50% - 10px);
+        height : 300px;
+    }
+
 }
 
 .card:hover {
