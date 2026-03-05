@@ -1,24 +1,62 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, signal, OnInit, inject } from '@angular/core'; 
 import { CommonModule } from '@angular/common';
+import { RouterOutlet } from '@angular/router'; // Import manquant ajouté
 import { MapComponent } from './components/map/map.component';
 import { AccueilComponent } from './components/accueil/accueil.component';
 import { CompteComponent } from './components/compte/compte.component';
 import { FavorisComponent } from './components/favoris/favoris.component';
 import { ClassementComponent } from './components/classement/classement.component';
+import { DataService } from './services/data.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CommonModule, MapComponent,  AccueilComponent, CompteComponent, FavorisComponent, ClassementComponent, CommonModule],
+  standalone: true,
+  // On s'assure que RouterOutlet est bien présent dans les imports
+  imports: [
+    RouterOutlet, 
+    CommonModule, 
+    MapComponent, 
+    AccueilComponent, 
+    CompteComponent, 
+    FavorisComponent, 
+    ClassementComponent
+  ],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App {
+export class App implements OnInit { 
+  // 1. Injection du service de données
+  private dataService = inject(DataService); 
+
+  // 2. Création d'un signal pour le message de la BDD
+  protected readonly bddMessage = signal<string>('Connexion en cours...');
+
   protected readonly title = signal('studyMap');
   protected readonly logoSrc = signal('assets/StudyMap.png');
 
   /** controls visibility of the account popup */
   protected showCompte = signal(false);
+
+  // 3. Appel au Back-end au démarrage du composant
+  ngOnInit() {
+    console.log('Tentative de connexion au Back-end...');
+
+    this.dataService.getTestData().subscribe({
+      next: (data) => {
+        // Met à jour le signal (optionnel si tu ne l'affiches plus en HTML)
+        this.bddMessage.set(data.message);
+        
+        // Affiche le résultat en vert dans la console
+        console.log('%c Succès Back-end :', 'color: green; font-weight: bold;', data);
+      },
+      error: (err) => {
+        this.bddMessage.set('Erreur serveur');
+        
+        // Affiche l'erreur en rouge dans la console
+        console.error('%c Erreur Back-end :', 'color: red; font-weight: bold;', err);
+      }
+    });
+  }
 
   protected toggleCompte() {
     this.showCompte.set(!this.showCompte());
@@ -27,6 +65,7 @@ export class App {
   protected closeCompte() {
     this.showCompte.set(false);
   }
+  
   protected readonly componentActif = signal<'accueil' | 'favoris' | 'classement'>('accueil');
 
   protected onThemeToggle() {
@@ -35,11 +74,9 @@ export class App {
     const conteneurTheme = document.getElementById('changerTheme');
     const iconeTheme = conteneurTheme ? conteneurTheme.querySelector('svg') as HTMLElement | null : null;
 
-    // bascule et persiste
     const isDark = document.body.classList.toggle('dark-mode');
     try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch {}
 
-    // images dans /src/assets
     if (isDark) {
       this.logoSrc.set('assets/6.png');
       if (iconeTheme) {
