@@ -32,8 +32,11 @@
     "@angular/platform-server": "^21.2.0",
     "@angular/router": "^21.2.0",
     "@angular/ssr": "^21.0.5",
-    "express": "^5.1.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
     "leaflet": "^1.9.4",
+    "mysql2": "^3.18.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -45,7 +48,13 @@
     "@types/leaflet": "^1.9.21",
     "@types/node": "^20.17.19",
     "jsdom": "^27.1.0",
+    "nodemon": "^3.1.14",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8"
-  }
+  },
+  "description": "This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.5.",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
