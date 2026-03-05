@@ -1,4 +1,4 @@
-import { Component, Input, computed, signal, inject } from '@angular/core';
+import { Component, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FavorisService } from '../../services/favoris.service';
 
@@ -8,17 +8,13 @@ interface Ville {
 }
 
 @Component({
-  selector: 'app-resultats', 
+  selector: 'app-favoris-display', 
   standalone: true,        
   imports: [CommonModule],            
-  templateUrl: './resultats.component.html',
-  styleUrl: './resultats.component.scss'
+  templateUrl: './favoris-display.component.html',
+  styleUrl: './favoris-display.component.scss'
 })
-export class ResultatsComponent {
-  /** nom de la ville recherchée */
-  @Input() query = '';
-
-  /** inject le service favoris */
+export class FavorisDisplayComponent {
   private favorisService = inject(FavorisService);
 
   /** données factices par défaut */
@@ -41,22 +37,8 @@ export class ResultatsComponent {
     }
   ]);
 
-  /** expose le service pour les tests */
-  get favoris() {
-    return this.favorisService.favoris;
-  }
-
   /** détail de la ville affichée dans le modal */
   detailVille = signal<Ville | null>(null);
-
-  /** villes filtrées en fonction de la requête */
-  filtered = computed(() => {
-    const q = this.query.trim().toLowerCase();
-    if (!q) {
-      return this.villes();
-    }
-    return this.villes().filter(v => v.nom.toLowerCase().includes(q));
-  });
 
   /** villes uniquement dans les favoris */
   favorisFiltered = computed(() => {
