@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { Component, Input, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FavorisService } from '../../services/favoris.service';
@@ -7,9 +6,6 @@ interface Ville {
   nom: string;
   imageUrl: string;
 }
-=======
-import { Component, Input } from '@angular/core';
->>>>>>> 878f5e1c4f3dcf275c2def28398890d3624cec74
 
 @Component({
   selector: 'app-resultats', 
@@ -19,7 +15,6 @@ import { Component, Input } from '@angular/core';
   styleUrl: './resultats.component.scss'
 })
 export class ResultatsComponent {
-<<<<<<< HEAD
   /** nom de la ville recherchée */
   @Input() query = '';
 
@@ -87,7 +82,4 @@ export class ResultatsComponent {
   closeDetails() {
     this.detailVille.set(null);
   }
-=======
-  @Input() menuChoisi: 'accueil' | 'classement' | 'favoris' = 'accueil';
->>>>>>> 878f5e1c4f3dcf275c2def28398890d3624cec74
 }
