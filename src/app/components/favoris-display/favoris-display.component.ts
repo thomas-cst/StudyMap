@@ -1,4 +1,4 @@
-import { Component, computed, signal, inject } from '@angular/core';
+import { Component, computed, signal, inject,Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FavorisService } from '../../services/favoris.service';
 
@@ -15,6 +15,8 @@ interface Ville {
   styleUrl: './favoris-display.component.scss'
 })
 export class FavorisDisplayComponent {
+  @Input() filtreActuel = '';
+
   private favorisService = inject(FavorisService);
 
   /** données factices par défaut */

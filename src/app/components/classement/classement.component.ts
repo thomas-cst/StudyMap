@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component,signal } from '@angular/core';
 import { SearchBarComponent } from '../searchBar/searchBar.component';
 import { ResultatsComponent } from '../resultats/resultats.component';
 import { FiltreComponent } from '../filtre/filtre.component';
@@ -11,5 +11,9 @@ import { FiltreComponent } from '../filtre/filtre.component';
   styleUrl: './classement.component.scss'
 })
 export class ClassementComponent {
-  
+  filtreActuel = signal('');
+
+  onFiltreChange(filtre: string) {
+    this.filtreActuel.set(filtre);
+  }
 }

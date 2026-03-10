@@ -4,39 +4,67 @@
         Filtres
     </button>
 
-    <div class="filtre-menu" [class.active]="isMenuActive()">
-        <div class="filtre-section">
-            <p>budget</p>
-            <span>{{ budgetMin() }}€ - {{budgetMax()}}€{{ budgetMax() == 5000? '+' : ''}}</span>
-            
-            <div class="sliderBudget">
-                <div class="slider-track"></div>
-                
-                <input type="range" 
-                    [value]="budgetMin()" 
-                    min="0" max="5000" step="10"
-                    (input)="updateMin($event)"
-                    class="input-min">
+   <div class="filtre-menu" [class.active]="isMenuActive()">
+        <div class="filtre-groupe">
+        
+        @if (menus() === 'accueil') {
+            <p id="titre-filtre">Découvrir par :</p>
+        
+            <label class="options">
+                <input type="radio" name="option-accueil" value="itineraire" (change)="onOptionChange($event)" checked>
+                <span>📍 Autour de moi</span>
+            </label>
 
-                <input type="range" 
-                    [value]="budgetMax()" 
-                    min="0" max="5000" step="10"
-                    (input)="updateMax($event)"
-                    class="input-max">
-            </div>
-        </div>
-        <div class="separation"></div>
-        <div class="filtre-section">
-            <label><input type="checkbox"> évènements</label>
-            <label><input type="checkbox"> sorties</label>
-        </div>
-        <div class="separation"></div>
-        <div class="filtre-section">
-            <p>météo</p>
-            <label><input type="checkbox"> pluvieux</label>
-            <label><input type="checkbox"> ensoleillé</label>
-            <label><input type="checkbox"> froid</label>
-            <label><input type="checkbox"> chaud</label>
+            <label class="options">
+                <input type="radio" name="option-accueil" (change)="onOptionChange($event)" value="mer">
+                <span>🏖️ Bord de mer</span>
+            </label>
+
+            <label class="options">
+                <input type="radio" name="option-accueil" (change)="onOptionChange($event)" value="montagne">
+                <span>🏔️ Montagne</span>
+            </label>
+
+            <label class="options">
+                <input type="radio" name="option-accueil" (change)="onOptionChange($event)" value="top-etudiant">
+                <span>🎓 Top Villes Étudiantes</span>
+            </label>
+        }
+
+        @if(menus() === 'classement' || menus() === 'favoris'){
+            <p id="titre-filtre">Trier par priorité :</p>
+            
+            <label class="options">
+                <input type="radio" name="option-tri" value="budget" (change)="onOptionChange($event)" checked>
+                <span>💶 Loyer le moins cher</span>
+                
+                <div class="slider-container">
+                    <p style="font-size: 12px; margin-bottom: 5px; text-align: center;">
+                        {{ budgetMin() }}€ - {{budgetMax()}}€{{ budgetMax() == 5000? '+' : ''}}
+                    </p>
+                    <div class="sliderBudget">
+                        <div class="slider-track"></div>
+                        <input type="range" [value]="budgetMin()" min="0" max="5000" step="10" (input)="updateMin($event)" class="input-min">
+                        <input type="range" [value]="budgetMax()" min="0" max="5000" step="10" (input)="updateMax($event)" class="input-max">
+                    </div>
+                </div>
+            </label>
+
+            <label class="options">
+                <input type="radio" name="option-tri" value="emploi" (change)="onOptionChange($event)">
+                <span>💼 Emploi et Attractivité</span>
+            </label>
+
+            <label class="options">
+                <input type="radio" name="option-tri" value="transport" (change)="onOptionChange($event)">
+                <span>🚆 Qualité des transports</span>
+            </label>
+
+            <label class="options">
+                <input type="radio" name="option-tri" value="vieNocturne" (change)="onOptionChange($event)">
+                <span>🍻 Bars et Vie nocturne</span>
+            </label>
+        }
         </div>
     </div>
 </div>

@@ -2,7 +2,7 @@
     <div class="recherches">
         <app-searchBar></app-searchBar>
         
-        <app-filtre></app-filtre>
+        <app-filtre [menus]="'favoris'" (onFiltreChange)="onFiltreChange($event)"></app-filtre>
         
     </div> 
     <h2>Favoris</h2>

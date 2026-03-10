@@ -1,3 +1,14 @@
+:host {
+    --bg-light-blue: #4a6b8a;
+    --bg-white: #ffffff;
+}
+
+.filtre-container {
+    position: relative;
+    font-family: sans-serif;
+}
+
+/* Bouton Filtres */
 .filtre-btn {
     background-color: var(--bg-light-blue);
     color: var(--bg-white);
@@ -8,36 +19,93 @@
     align-items: center;
     gap: 8px;
     cursor: pointer;
+    font-weight: 500;
+    transition: opacity 0.2s;
+
+    &:hover {
+        opacity: 0.9;
+    }
 }
 
-.filtre-container {
-    position: relative;
-}
-
+/* Menu déroulant */
 .filtre-menu {
     display: none;
     position: absolute;
-    top: 50px;
+    top: 55px;
     right: 0;
-    width: 200px;
+    width: 240px; // Un peu plus large pour le confort
     background-color: var(--bg-light-blue);
     color: var(--bg-white);
     padding: 15px;
     border-radius: 15px;
     z-index: 100;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
 }
 
 .filtre-menu.active {
     display: block;
 }
 
-.filtre-section {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 15px;
-    font-size: 13px;
+#titre-filtre{
+    padding-bottom: 1em;
+}
+
+/* Choix des options */
+.options {
+    display: block;
+    margin-bottom: 10px;
+    cursor: pointer;
+
+    input[type="radio"] {
+        display: none; 
+    }
+
+    /* Texte de l'option (bouton) */
+    span:first-of-type {
+        display: block;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 14px;
+    }
+
+    &:hover span:first-of-type {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    input[type="radio"]:checked + span {
+        background: var(--bg-white);
+        color: var(--bg-light-blue);
+        font-weight: 600;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+}
+
+/* Slider budget */
+.slider-container {
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.3s ease-in-out;
+    opacity: 0;
+    padding: 0 10px;
+}
+
+/* Affiche le slider uniquement si budget est coché */
+input[value="budget"]:checked ~ .slider-container {
+    max-height: 100px;
+    opacity: 1;
+    margin-top: 5px;
+    padding-bottom: 10px;
+}
+
+.budget-values {
+    font-size: 12px;
+    margin-top: 8px;
+    display: block;
+    text-align: center;
 }
 
 .sliderBudget {
@@ -46,46 +114,47 @@
     height: 30px;
     display: flex;
     align-items: center;
+    margin-top: 5px;
 }
 
-/* la barre que l'utilisateur voit */
 .slider-track {
     position: absolute;
     width: 100%;
     height: 4px;
-    background-color: white;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
     z-index: 1;
 }
 
 input[type="range"] {
     position: absolute;
     width: 100%;
-    background: none; /* cache la barre de l'input */
-    appearance: none; /* Supprime le style par défaut */
+    background: none;
+    appearance: none;
     pointer-events: none;
-    z-index: 1;
+    z-index: 2;
     margin: 0;
 
-    /* le rond */
     &::-webkit-slider-thumb {
         appearance: none;
         pointer-events: auto;
-        height: 16px;
-        width: 16px;
+        height: 18px;
+        width: 18px;
         border-radius: 50%;
         background: white;
         cursor: pointer;
         border: 2px solid var(--bg-light-blue);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
 
-    /* pour Firefox */
     &::-moz-range-thumb {
+        appearance: none;
         pointer-events: auto;
-        height: 16px;
-        width: 16px;
+        height: 18px;
+        width: 18px;
         border-radius: 50%;
         background: white;
         cursor: pointer;
-        border: none;
+        border: 2px solid var(--bg-light-blue);
     }
 }

@@ -13,8 +13,13 @@ import { FiltreComponent } from '../filtre/filtre.component';
 export class AccueilComponent {
   /** terme actuellement recherché */
   searchTerm = signal('');
+  filtreActuel = signal('');
 
   onSearch(city: string) {
     this.searchTerm.set(city);
+  }
+
+  onFiltreChange(filtre: string) {
+    this.filtreActuel.set(filtre);
   }
 }
