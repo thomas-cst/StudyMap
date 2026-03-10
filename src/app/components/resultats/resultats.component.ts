@@ -1,9 +1,21 @@
+<<<<<<< HEAD
 import { Component, Input, computed, signal, inject, effect, OnChanges, SimpleChanges, OnInit, DestroyRef } from '@angular/core';
+=======
+import { Component, Input, computed, signal, inject } from '@angular/core';
+>>>>>>> d97f9a81c81be0bc3364f8a8a7484b9b2bddd790
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FavorisService } from '../../services/favoris.service';
+<<<<<<< HEAD
 import { VillesService, Ville } from '../../services/villes.service';
 import { MapSyncService } from '../../services/map-sync.service';
+=======
+
+interface Ville {
+  nom: string;
+  imageUrl: string;
+}
+>>>>>>> d97f9a81c81be0bc3364f8a8a7484b9b2bddd790
 
 @Component({
   selector: 'app-resultats', 
