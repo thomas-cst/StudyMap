@@ -1,11 +1,93 @@
 <div id="modalCompte" class="FenetreCompte active">
     <div class="contenuFenetreCompte">
         <h3>Bienvenue !</h3>
-        <p>Connectez-vous pour sauvegarder vos favoris.</p>
-        <div class="boutonsConnexion">
-            <button class="btn-login">Se connecter</button>
-            <button class="btn-signup">S'inscrire</button>
+        
+        <!-- Messages d'erreur et de succès -->
+        <div *ngIf="successMessage" class="message success-message">
+            {{ successMessage }}
         </div>
+        <div *ngIf="errorMessage" class="message error-message">
+            {{ errorMessage }}
+        </div>
+
+        <!-- Affichage si connecté -->
+        <div *ngIf="isConnected" class="connected-content">
+            <p>Connecté en tant que : <strong>{{ currentUser.email }}</strong></p>
+            <button class="btn-logout" (click)="logout()">Se déconnecter</button>
+        </div>
+
+        <!-- Affichage si non connecté -->
+        <div *ngIf="!isConnected">
+            <p>Connectez-vous pour sauvegarder vos favoris.</p>
+            <div class="boutonsConnexion" *ngIf="!showSignupForm && !showLoginForm">
+                <button class="btn-login" (click)="toggleLoginForm()">Se connecter</button>
+                <button class="btn-signup" (click)="toggleSignupForm()">S'inscrire</button>
+            </div>
+
+            <!-- Formulaire d'inscription -->
+            <div *ngIf="showSignupForm" class="signup-form">
+                <h4>Inscription</h4>
+                <form [formGroup]="signupForm" (ngSubmit)="onSignup()">
+                    <div class="form-group">
+                        <label for="email">Email :</label>
+                        <input type="email" id="email" formControlName="email" required>
+                        <div *ngIf="signupForm.get('email')?.invalid && signupForm.get('email')?.touched" class="error">
+                            Email invalide
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Mot de passe :</label>
+                        <input type="password" id="password" formControlName="password" required>
+                        <div *ngIf="signupForm.get('password')?.invalid && signupForm.get('password')?.touched" class="error">
+                            Le mot de passe doit contenir 6-20 caractères, avec au moins une minuscule, une majuscule, un chiffre et un caractère spécial (@$!%*?&)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirmer le mot de passe :</label>
+                        <input type="password" id="confirmPassword" formControlName="confirmPassword" required>
+                        <div *ngIf="signupForm.get('confirmPassword')?.errors?.['mismatch'] && signupForm.get('confirmPassword')?.touched" class="error">
+                            Les mots de passe ne correspondent pas
+                        </div>
+                    </div>
+                    <button type="submit" [disabled]="signupForm.invalid" class="btn-submit">S'inscrire</button>
+                    <button type="button" (click)="toggleSignupForm()" class="btn-cancel">Annuler</button>
+                    <div class="divider">OU</div>
+                    <button type="button" (click)="onGoogleLogin()" class="btn-google">Continuer avec Google</button>
+                </form>
+            </div>
+
+            <!-- Formulaire de connexion -->
+            <div *ngIf="showLoginForm" class="login-form">
+                <h4>Connexion</h4>
+                <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+                    <div class="form-group">
+                        <label for="loginEmail">Email :</label>
+                        <input type="email" id="loginEmail" formControlName="email" required>
+                        <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="error">
+                            Email invalide
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Mot de passe :</label>
+                        <input type="password" id="loginPassword" formControlName="password" required>
+                        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error">
+                            Mot de passe requis
+                        </div>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label for="rememberMe">
+                            <input type="checkbox" id="rememberMe" formControlName="rememberMe">
+                            Rester connecté
+                        </label>
+                    </div>
+                    <button type="submit" [disabled]="loginForm.invalid" class="btn-submit">Se connecter</button>
+                    <button type="button" (click)="toggleLoginForm()" class="btn-cancel">Annuler</button>
+                    <div class="divider">OU</div>
+                    <button type="button" (click)="onGoogleLogin()" class="btn-google">Continuer avec Google</button>
+                </form>
+            </div>
+        </div>
+
         <button class="btn-close" (click)="close()">&times;</button>
     </div>
 </div>
