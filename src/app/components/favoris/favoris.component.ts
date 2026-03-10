@@ -11,6 +11,16 @@ import { FiltreComponent } from '../filtre/filtre.component';
   styleUrl: './favoris.component.scss'
 })
 export class FavorisComponent {
+  /** terme actuellement recherché */
+  searchTerm = signal('');
+
+  onSearch(city: string) {
+    this.searchTerm.set(city);
+  }
+
+  get query() {
+    return this.searchTerm();
+  }
   filtreActuel = signal('');
 
   onFiltreChange(filtre: string) {

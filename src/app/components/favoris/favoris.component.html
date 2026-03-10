@@ -1,12 +1,12 @@
 <div class="favoris">
     <div class="recherches">
-        <app-searchBar></app-searchBar>
+        <app-searchBar (search)="onSearch($event)"></app-searchBar>
         
         <app-filtre [menus]="'favoris'" (onFiltreChange)="onFiltreChange($event)"></app-filtre>
         
     </div> 
     <h2>Favoris</h2>
     <div class="resultats">
-        <app-favoris-display></app-favoris-display>
+        <app-favoris-display [query]="query"></app-favoris-display>
     </div>
 </div>

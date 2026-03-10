@@ -1,11 +1,11 @@
 <div class="classement">
     <div class="recherches">
-        <app-searchBar></app-searchBar>
+        <app-searchBar (search)="onSearch($event)"></app-searchBar>
         
         <app-filtre [menus]="'classement'" (onFiltreChange)="onFiltreChange($event)" ></app-filtre>
     </div> 
     <h2>Classement</h2>
     <div class="resultats">
-        <app-resultats [filtreActuel]="filtreActuel()"></app-resultats>
+        <app-resultats [filtreActuel]="filtreActuel()" [query]="query"></app-resultats>
     </div>
 </div>

@@ -1,43 +1,68 @@
 <div class="resultats">
-  <ng-container *ngIf="filtered().length; else empty">
-    <div class="ville-card" *ngFor="let v of filtered()" [style.backgroundImage]="'url(' + v.imageUrl + ')'">
-      <!-- Icône coeur en haut à droite -->
-      <button class="btn-favoris" 
-              [class.active]="isFavoris(v.nom)"
-              (click)="toggleFavoris(v.nom)"
-              title="Ajouter aux favoris">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="heart-icon">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-      </button>
+  <!-- Loading state -->
+  <div *ngIf="isLoading()" class="loading">
+    <p>Chargement des villes...</p>
+  </div>
 
-      <!-- Overlay avec dégradé et texte -->
-      <div class="ville-overlay">
-        <h4>{{ v.nom }}</h4>
-      </div>
+  <!-- Grille de résultats -->
+  <ng-container *ngIf="!isLoading() && filtered().length; else empty">
+    <div class="ville-card" 
+         *ngFor="let v of filtered()" 
+         [style.backgroundImage]="'url(' + (v.imageUrl || 'https://via.placeholder.com/400x300/cccccc/000000?text=' + encodeURIComponent(v.nom)) + ')'"
+         [class.expanded]="isExpanded(v)">
+      
+      <!-- Mode normal : afficher l'overlay et les boutons -->
+      <ng-container *ngIf="!isExpanded(v)">
+        <!-- Icône coeur en haut à droite -->
+        <button class="btn-favoris" 
+                [class.active]="isFavoris(v.nom)"
+                (click)="toggleFavoris(v.nom)"
+                title="Ajouter aux favoris">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="heart-icon">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </button>
 
-      <!-- Icône + en bas à droite -->
-      <button class="btn-details" 
-              (click)="showDetails(v)"
-              title="Voir plus d'infos">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="plus-icon">
-          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-        </svg>
-      </button>
+        <!-- Overlay avec dégradé et texte -->
+        <div class="ville-overlay">
+          <h4>{{ v.nom }}</h4>
+        </div>
+
+        <!-- Icône + en bas à droite -->
+        <button class="btn-details" 
+                (click)="toggleExpanded(v)"
+                title="Voir plus d'infos">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="plus-icon">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+        </button>
+      </ng-container>
+
+      <!-- Mode agrandis : afficher les détails complets -->
+      <ng-container *ngIf="isExpanded(v)">
+        <div class="expanded-content">
+          <div class="expanded-header">
+            <h2>{{ v.nom }}</h2>
+            <button class="btn-collapse" 
+                    (click)="toggleExpanded(v)"
+                    title="Réduire">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="minus-icon">
+                <path d="M19 13H5v-2h14v2z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="expanded-body">
+            <img [src]="v.imageUrl" [alt]="v.nom" class="expanded-image" />
+            <div class="expanded-info">
+              <p>Détails et informations à venir...</p>
+            </div>
+          </div>
+        </div>
+      </ng-container>
     </div>
   </ng-container>
   <ng-template #empty>
     <p *ngIf="query">Aucun résultat pour « {{ query }} ».</p>
     <p *ngIf="!query">Aucune ville sélectionnée.</p>
   </ng-template>
-</div>
-
-<!-- Modal pour afficher l'agrandissement (détails) -->
-<div class="modal" *ngIf="detailVille()" (click)="closeDetails()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <button class="modal-close" (click)="closeDetails()">✕</button>
-    <img [src]="detailVille()!.imageUrl" [alt]="detailVille()!.nom" class="modal-image" />
-    <h2>{{ detailVille()!.nom }}</h2>
-    <p>Détails et informations à venir...</p>
-  </div>
 </div>
