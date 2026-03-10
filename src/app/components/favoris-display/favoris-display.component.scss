@@ -1,9 +1,23 @@
+:host {
+    display: block;
+    width: 100%;
+}
+
 .resultats {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 20px;
 }
 
+.loading {
+    grid-column: span 2;
+    text-align: center;
+    padding: 50px;
+    font-size: 18px;
+    color: #666;
+}
+
+/* Grille de résultats */
 .ville-card {
     width: 100%;
     height: 250px;
@@ -13,9 +27,17 @@
     display: flex;
     align-items: flex-end;
     overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: all 0.4s ease;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     position: relative;
+}
+
+/* Carte agrandie : occupe 2 colonnes et plus de hauteur */
+.ville-card.expanded {
+    grid-column: span 2;
+    height: 500px;
+    background-size: cover;
+    background-attachment: fixed;
 }
 
 .ville-card::before {
@@ -27,6 +49,10 @@
     bottom: 0;
     background: linear-gradient(180deg, transparent 40%, rgba(47, 65, 86, 0.8) 100%);
     pointer-events: none;
+}
+
+.ville-card.expanded::before {
+    display: none;
 }
 
 .ville-overlay {
@@ -48,6 +74,95 @@
 .ville-card:hover {
     transform: scale(1.03);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.ville-card.expanded:hover {
+    transform: none;
+}
+
+/* Mode agrandis : contenu des détails */
+.expanded-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%);
+    position: relative;
+    z-index: 3;
+    padding: 30px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.expanded-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #2F4156;
+    padding-bottom: 15px;
+}
+
+.expanded-header h2 {
+    margin: 0;
+    color: #2F4156;
+    font-size: 2.2em;
+}
+
+.btn-collapse {
+    background-color: #2F4156;
+    color: white;
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.btn-collapse:hover {
+    background-color: #1a2a3a;
+    transform: scale(1.1);
+}
+
+.minus-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.expanded-body {
+    display: flex;
+    gap: 30px;
+    flex: 1;
+}
+
+.expanded-image {
+    width: 350px;
+    height: 280px;
+    object-fit: cover;
+    border-radius: 12px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.expanded-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 15px;
+}
+
+.expanded-info p {
+    margin: 0;
+    color: #555;
+    font-size: 1.05em;
+    line-height: 1.7;
 }
 
 /* Bouton Favoris (coeur) - haut à droite */
@@ -119,92 +234,4 @@
     width: 22px;
     height: 22px;
     color: #2F4156;
-}
-
-/* Modal pour agrandissement */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-.modal-content {
-    background-color: white;
-    border-radius: 16px;
-    overflow: hidden;
-    max-width: 600px;
-    width: 90%;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    position: relative;
-    animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-    from {
-        transform: translateY(30px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-.modal-close {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: rgba(255, 255, 255, 0.9);
-    border: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    font-size: 24px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1001;
-    transition: background-color 0.2s ease;
-}
-
-.modal-close:hover {
-    background-color: rgba(255, 255, 255, 1);
-}
-
-.modal-image {
-    width: 100%;
-    height: 400px;
-    object-fit: cover;
-}
-
-.modal-content h2 {
-    padding: 20px 20px 10px;
-    margin: 0;
-    color: #2F4156;
-    font-size: 1.8em;
-}
-
-.modal-content p {
-    padding: 0 20px 20px;
-    margin: 0;
-    color: #666;
-    font-size: 1em;
 }

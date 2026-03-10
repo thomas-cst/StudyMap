@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { SearchBarComponent } from '../searchBar/searchBar.component';
 import { FavorisDisplayComponent } from '../favoris-display/favoris-display.component';
 import { FiltreComponent } from '../filtre/filtre.component';
@@ -11,5 +11,14 @@ import { FiltreComponent } from '../filtre/filtre.component';
   styleUrl: './favoris.component.scss'
 })
 export class FavorisComponent {
-  
+  /** terme actuellement recherché */
+  searchTerm = signal('');
+
+  onSearch(city: string) {
+    this.searchTerm.set(city);
+  }
+
+  get query() {
+    return this.searchTerm();
+  }
 }

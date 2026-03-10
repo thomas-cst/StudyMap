@@ -1,5 +1,6 @@
-import { Component, AfterViewInit, OnDestroy, ViewChild, ElementRef, Inject, PLATFORM_ID, signal, effect } from '@angular/core';
+import { Component, AfterViewInit, OnDestroy, ViewChild, ElementRef, Inject, PLATFORM_ID, signal, effect, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { MapSyncService } from '../../services/map-sync.service';
 
 declare const L: any;
 
@@ -14,6 +15,7 @@ export class MapComponent implements AfterViewInit, OnDestroy {
     private map: any;
 	private tileLayer: any;
 	private isDarkMode = signal(false);
+	private mapSyncService = inject(MapSyncService);
 
 	constructor(@Inject(PLATFORM_ID) private platformId: Object) {
 		// Observer les changements de thème et mettre à jour la carte
@@ -22,6 +24,27 @@ export class MapComponent implements AfterViewInit, OnDestroy {
 				this.updateTileLayer(true);
 			} else if (this.tileLayer) {
 				this.updateTileLayer(false);
+			}
+		});
+
+		// Observer les changements de zoom - DOIT être dans le constructeur pour éviter NG0203
+		effect(() => {
+			const target = this.mapSyncService.zoomTarget();
+			// Attendre que la map soit initialisée avant de zoomer
+			if (target && this.map) {
+				console.log('✅ Effect déclenché, zoom vers', target.ville, ':', target.lat, target.lng);
+				try {
+					this.map.setView([target.lat, target.lng], 14);
+				} catch (e) {
+					console.error('❌ Erreur lors du zoom:', e);
+				}
+			} else {
+				if (!target) {
+					console.log('⏳ En attente d\'un signal de zoom...');
+				}
+				if (!this.map) {
+					console.log('⏳ Map pas encore initialisée, zoom en attente...');
+				}
 			}
 		});
 	}
