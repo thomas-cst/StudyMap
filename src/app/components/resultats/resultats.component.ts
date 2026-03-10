@@ -5,13 +5,6 @@ import { FavorisService } from '../../services/favoris.service';
 import { VillesService, Ville } from '../../services/villes.service';
 import { MapSyncService } from '../../services/map-sync.service';
 
-interface Ville {
-  nom: string;
-  imageUrl: string;
-  lat : number;
-  lng : number;
-}
-
 @Component({
   selector: 'app-resultats', 
   standalone: true,        
@@ -45,29 +38,6 @@ export class ResultatsComponent implements OnChanges, OnInit {
 
   /** loading state */
   isLoading = signal(true);
-  /** données factices par défaut */
-  private villes = signal<Ville[]>([
-    {
-      nom: 'Paris',
-      imageUrl: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=500&q=60',
-      lat: 48.8566,lng: 2.3522
-    },
-    {
-      nom: 'Lyon',
-      imageUrl: 'https://images.unsplash.com/photo-1563514755191-496aee4f699d?auto=format&fit=crop&w=500&q=60',
-      lat: 45.7640, lng: 4.8357
-    },
-    {
-      nom: 'Rennes',
-      imageUrl: 'https://images.unsplash.com/photo-1566336306233-14541bf7fb79?auto=format&fit=crop&w=500&q=60',
-      lat: 48.1173, lng: -1.6778
-    },
-    {
-      nom: 'Le Mans',
-      imageUrl: 'https://images.unsplash.com/photo-1621648239021-825529f7ce18?auto=format&fit=crop&w=500&q=60',
-      lat: 48.0061, lng: 0.1996
-    }
-  ]);
 
   /** expose le service pour les tests */
   get favoris() {
@@ -90,14 +60,27 @@ export class ResultatsComponent implements OnChanges, OnInit {
       next: (villes) => {
         this.villes.set(villes);
         this.isLoading.set(false);
+
+        villes.forEach(ville => {
+          if (ville.lat === undefined) {
+            this.villesService.getCoordinatesForVille(ville.nom)
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe(coords => {
+                this.villes.update(currentVilles => 
+                  currentVilles.map(v => v.nom === ville.nom ? { ...v, lat: coords.lat, lng: coords.lng } : v)
+                );
+              });
+          }
+        });
+
       },
       error: (err) => {
         console.error('Erreur lors du chargement des villes:', err);
         this.isLoading.set(false);
         // Fallback to some default villes if API fails
         this.villes.set([
-          { nom: 'Paris', imageUrl: 'https://www.okvoyage.com/wp-content/uploads/2023/10/Paris-en-photos-scaled.jpg' },
-          { nom: 'Lyon', imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTim-y5IcrE4tmZFz2wzjL6jHqjTX5ZjsxrDw&s' }
+          { nom: 'Paris', imageUrl: 'https://www.okvoyage.com/wp-content/uploads/2023/10/Paris-en-photos-scaled.jpg',lat: 48.8566, lng: 2.3522 },
+          { nom: 'Lyon', imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTim-y5IcrE4tmZFz2wzjL6jHqjTX5ZjsxrDw&s',lat: 45.7640, lng: 4.8357 }
         ]);
       }
     });
@@ -133,55 +116,46 @@ export class ResultatsComponent implements OnChanges, OnInit {
   }
 
   /** affiche TOUTES les villes */
-  filtered = computed(() => {
-    const all = this.villes();
-    const recent = this.mapSyncService.recentlyViewed();
-    
-    if (recent.length === 0) return all;
-    
-    // Créer un Map pour des lookups O(1) au lieu de O(n)
-    const recentMap = new Map(recent.map((v, i) => [v, i]));
-    
-    // Trier sans muter l'array original
-    return [...all].sort((a, b) => {
-      const aIndex = recentMap.get(a.nom);
-      const bIndex = recentMap.get(b.nom);
-      
-      const aIsRecent = aIndex !== undefined;
-      const bIsRecent = bIndex !== undefined;
-      
-      if (aIsRecent && !bIsRecent) return -1;
-      if (!aIsRecent && bIsRecent) return 1;
-      
-      // Si les deux sont récentes, garder l'ordre de recentlyViewed
-      if (aIsRecent && bIsRecent) {
-        return aIndex! - bIndex!;
-      }
-      
-      return 0;
-    });
+ filtered = computed(() => {
     let list = [...this.villes()];
-    const currentFiltre = this.filtreActuel(); 
-    console.log("Valeur détectée dans le computed :", currentFiltre);
-    
-    //filtrer par nom (dans la barre de recherche)
-    const q = this.query.trim().toLowerCase();
+    const currentFiltre = this.filtreActuel();
+    const q = this.querySignal().trim().toLowerCase();
+
+    // Filtrer par nom (Barre de recherche)
     if (q) {
       list = list.filter(v => v.nom.toLowerCase().includes(q));
     }
 
-    //filtre "Autour de moi"
-    if (currentFiltre.startsWith('geo:')) {
+    // Filtre "Autour de moi" 
+   if (currentFiltre.startsWith('geo:')) {
       const [lat, lng] = currentFiltre.replace('geo:', '').split(',').map(Number);
       
-      return list.sort((a, b) => {
-        const distA = this.getDistance(lat, lng, a.lat, a.lng);
-        const distB = this.getDistance(lat, lng, b.lat, b.lng);
-        return distA - distB;
-      });
+      // On ne trie que les villes qui ont des coordonnées valides
+      return list
+        .filter(v => v.lat !== undefined && v.lng !== undefined)
+        .sort((a, b) => {
+          const distA = this.getDistance(lat, lng, a.lat!, a.lng!);
+          const distB = this.getDistance(lat, lng, b.lat!, b.lng!);
+          return distA - distB;
+        });
     }
-    return list;
+    // Si on a pas accès aux données de géoloc -> trier par consultés récemment
+    else {
+      const recent = this.mapSyncService.recentlyViewed();
+      if (recent.length > 0) {
+        const recentMap = new Map(recent.map((v, i) => [v, i]));
+        list.sort((a, b) => {
+          const aIndex = recentMap.get(a.nom);
+          const bIndex = recentMap.get(b.nom);
+          if (aIndex !== undefined && bIndex === undefined) return -1;
+          if (aIndex === undefined && bIndex !== undefined) return 1;
+          if (aIndex !== undefined && bIndex !== undefined) return aIndex - bIndex;
+          return 0;
+        });
+      }
+    }
 
+    return list;
   });
 
   /** villes uniquement dans les favoris */
@@ -219,6 +193,9 @@ export class ResultatsComponent implements OnChanges, OnInit {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(coords => {
           console.log(`🗺️ Zoom vers ${ville.nom}:`, coords);
+          this.villes.update(villes => 
+            villes.map(v => v.nom === ville.nom ? { ...v, lat: coords.lat, lng: coords.lng } : v)
+          );
           this.mapSyncService.zoomToVille(ville.nom, coords.lat, coords.lng);
         });
     }
