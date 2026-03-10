@@ -1,12 +1,12 @@
 <div class="classement">
     <div class="recherches">
-        <app-searchBar></app-searchBar>
+        <app-searchBar (search)="onSearch($event)"></app-searchBar>
         
         <app-filtre></app-filtre>
         
     </div> 
     <h2>Classement</h2>
     <div class="resultats">
-        <app-resultats></app-resultats>
+        <app-resultats [query]="query"></app-resultats>
     </div>
 </div>

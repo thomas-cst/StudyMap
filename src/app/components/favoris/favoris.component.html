@@ -1,12 +1,12 @@
 <div class="favoris">
     <div class="recherches">
-        <app-searchBar></app-searchBar>
+        <app-searchBar (search)="onSearch($event)"></app-searchBar>
         
         <app-filtre></app-filtre>
         
     </div> 
-    <h2>Résultats de recherches</h2>
+    <h2>Favoris</h2>
     <div class="resultats">
-        <app-resultats></app-resultats>
+        <app-favoris-display [query]="query"></app-favoris-display>
     </div>
 </div>

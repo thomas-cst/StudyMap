@@ -6,26 +6,20 @@ import { VillesService, Ville } from '../../services/villes.service';
 import { MapSyncService } from '../../services/map-sync.service';
 
 @Component({
-  selector: 'app-resultats', 
+  selector: 'app-favoris-display', 
   standalone: true,        
   imports: [CommonModule],            
-  templateUrl: './resultats.component.html',
-  styleUrl: './resultats.component.scss'
+  templateUrl: './favoris-display.component.html',
+  styleUrl: './favoris-display.component.scss'
 })
-export class ResultatsComponent implements OnChanges, OnInit {
-  /** nom de la ville recherchée */
+export class FavorisDisplayComponent implements OnChanges, OnInit {
   @Input() query = '';
 
   /** signal local pour tracker la query */
   private querySignal = signal('');
 
-  /** inject le service favoris */
   private favorisService = inject(FavorisService);
-
-  /** inject le service villes */
   private villesService = inject(VillesService);
-
-  /** inject le service de sync map */
   private mapSyncService = inject(MapSyncService);
 
   /** destroy ref pour nettoyer les subscriptions */
@@ -36,11 +30,6 @@ export class ResultatsComponent implements OnChanges, OnInit {
 
   /** loading state */
   isLoading = signal(true);
-
-  /** expose le service pour les tests */
-  get favoris() {
-    return this.favorisService.favoris;
-  }
 
   /** ville agrandie dans la grille */
   expandedVille = signal<Ville | null>(null);
@@ -62,23 +51,19 @@ export class ResultatsComponent implements OnChanges, OnInit {
       error: (err) => {
         console.error('Erreur lors du chargement des villes:', err);
         this.isLoading.set(false);
-        // Fallback to some default villes if API fails
-        this.villes.set([
-          { nom: 'Paris', imageUrl: 'https://www.okvoyage.com/wp-content/uploads/2023/10/Paris-en-photos-scaled.jpg' },
-          { nom: 'Lyon', imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTim-y5IcrE4tmZFz2wzjL6jHqjTX5ZjsxrDw&s' }
-        ]);
+        // Fallback
+        this.villes.set([]);
       }
     });
   }
-
-  /** auto-expand celle qui match la recherche */
+  /** auto-expand celui qui match la recherche */
   constructor() {
     effect(() => {
       const q = this.querySignal().trim().toLowerCase();
       if (!q) {
         this.expandedVille.set(null);
       } else {
-        const matching = this.villes().find(v => v.nom.toLowerCase().includes(q));
+        const matching = this.filtered().find(v => v.nom.toLowerCase().includes(q));
         if (matching) {
           // Si la ville trouvée est DIFFÉRENTE de la dernière zoomée, on zoom
           if (this.lastZoomedVille() !== matching.nom) {
@@ -100,18 +85,25 @@ export class ResultatsComponent implements OnChanges, OnInit {
     }
   }
 
-  /** affiche TOUTES les villes */
+  /** affiche les favoris filtrés par query */
   filtered = computed(() => {
-    const all = this.villes();
+    const fav = this.villes().filter(v => this.favorisService.isFavoris(v.nom));
+    const q = this.querySignal().trim().toLowerCase();
     const recent = this.mapSyncService.recentlyViewed();
     
-    if (recent.length === 0) return all;
+    let result = fav;
+    if (q) {
+      result = fav.filter(v => v.nom.toLowerCase().includes(q));
+    }
+    
+    // Trier: d'abord les villes récemment consultées, puis le reste
+    if (recent.length === 0) return result;
     
     // Créer un Map pour des lookups O(1) au lieu de O(n)
     const recentMap = new Map(recent.map((v, i) => [v, i]));
     
     // Trier sans muter l'array original
-    return [...all].sort((a, b) => {
+    return [...result].sort((a, b) => {
       const aIndex = recentMap.get(a.nom);
       const bIndex = recentMap.get(b.nom);
       
@@ -130,11 +122,6 @@ export class ResultatsComponent implements OnChanges, OnInit {
     });
   });
 
-  /** villes uniquement dans les favoris */
-  favorisFiltered = computed(() => {
-    return this.villes().filter(v => this.favorisService.isFavoris(v.nom));
-  });
-
   /** toggle une ville en favoris */
   toggleFavoris(nom: string) {
     this.favorisService.toggleFavoris(nom);
@@ -143,11 +130,6 @@ export class ResultatsComponent implements OnChanges, OnInit {
   /** check si une ville est en favoris */
   isFavoris(nom: string): boolean {
     return this.favorisService.isFavoris(nom);
-  }
-
-  /** encode URI pour les URLs */
-  encodeURIComponent(str: string): string {
-    return encodeURIComponent(str);
   }
 
   /** Méthode commune pour expand + zoom */
@@ -184,5 +166,10 @@ export class ResultatsComponent implements OnChanges, OnInit {
   /** check si une ville est agrandie */
   isExpanded(ville: Ville): boolean {
     return this.expandedVille()?.nom === ville.nom;
+  }
+
+  /** encode URI pour les URLs */
+  encodeURIComponent(str: string): string {
+    return encodeURIComponent(str);
   }
 }

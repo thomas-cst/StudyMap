@@ -1,6 +1,8 @@
 :host {
     display: block;
     width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 
 /* Contenu des résultats */
@@ -28,6 +30,7 @@
     margin-bottom: 10px;
 }
 
-.resultats {
-    width: 100%;
+@media (max-width: 1000px) {
+    
+
 }
