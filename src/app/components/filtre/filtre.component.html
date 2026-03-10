@@ -11,7 +11,7 @@
             <p id="titre-filtre">Découvrir par :</p>
         
             <label class="options">
-                <input type="radio" name="option-accueil" value="itineraire" (change)="onOptionChange($event)" checked>
+                <input type="radio" name="option-accueil" value="itineraire" (change)="onOptionChange($event)">
                 <span>📍 Autour de moi</span>
             </label>
 
@@ -33,9 +33,14 @@
 
         @if(menus() === 'classement' || menus() === 'favoris'){
             <p id="titre-filtre">Trier par priorité :</p>
+
+            <label class="options">
+                <input type="radio" name="option-accueil" value="itineraire" (change)="onOptionChange($event)">
+                <span>📍 Autour de moi</span>
+            </label>
             
             <label class="options">
-                <input type="radio" name="option-tri" value="budget" (change)="onOptionChange($event)" checked>
+                <input type="radio" name="option-tri" value="budget" (change)="onOptionChange($event)">
                 <span>💶 Loyer le moins cher</span>
                 
                 <div class="slider-container">
