@@ -136,8 +136,8 @@ export class ResultatsComponent implements OnChanges, OnInit {
   });
 
   /** toggle une ville en favoris */
-  toggleFavoris(nom: string) {
-    this.favorisService.toggleFavoris(nom);
+  toggleFavoris(ville: Ville) {
+    this.favorisService.toggleFavoris(ville);
   }
 
   /** check si une ville est en favoris */

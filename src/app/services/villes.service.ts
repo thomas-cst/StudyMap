@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map, forkJoin, of, switchMap, catchError, concatMap, first, tap, delay } from 'rxjs';
 
 export interface Ville {
+  id_ville?: number;
   nom: string;
   imageUrl: string;
   lat?: number;
