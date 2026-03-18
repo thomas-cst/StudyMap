@@ -210,7 +210,6 @@
     border: 1px solid white;
     color: white;
 }
-
 .btn-google {
     background-color: white;
     color: #1f2937;
@@ -228,6 +227,12 @@
 
 .btn-google:hover {
     background-color: #f0f0f0;
+}
+
+.btn-google:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    color: #999;
 }
 
 .divider {

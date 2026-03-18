@@ -52,7 +52,7 @@
                     <button type="submit" [disabled]="signupForm.invalid" class="btn-submit">S'inscrire</button>
                     <button type="button" (click)="toggleSignupForm()" class="btn-cancel">Annuler</button>
                     <div class="divider">OU</div>
-                    <button type="button" (click)="onGoogleLogin()" class="btn-google">Continuer avec Google</button>
+                    <button type="button" (click)="onGoogleLogin()" class="btn-google" [disabled]="isLoading">Continuer avec Google</button>
                 </form>
             </div>
 
@@ -83,7 +83,7 @@
                     <button type="submit" [disabled]="loginForm.invalid" class="btn-submit">Se connecter</button>
                     <button type="button" (click)="toggleLoginForm()" class="btn-cancel">Annuler</button>
                     <div class="divider">OU</div>
-                    <button type="button" (click)="onGoogleLogin()" class="btn-google">Continuer avec Google</button>
+                    <button type="button" (click)="onGoogleLogin()" class="btn-google" [disabled]="isLoading">Continuer avec Google</button>
                 </form>
             </div>
         </div>

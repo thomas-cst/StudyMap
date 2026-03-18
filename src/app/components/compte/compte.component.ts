@@ -1,13 +1,16 @@
 import { Component, EventEmitter, Output, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { HttpClientModule } from '@angular/common/http';
+import { AuthService } from '../../services/auth.service';
+import { DataService } from '../../services/data.service';
 
 @Component({
   selector: 'app-compte',
   templateUrl: './compte.component.html',
   styleUrls: ['./compte.component.css'],
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule]
+  imports: [ReactiveFormsModule, CommonModule, HttpClientModule]
 })
 export class CompteComponent implements OnInit {
   @Output() closed = new EventEmitter<void>();
@@ -18,10 +21,11 @@ export class CompteComponent implements OnInit {
   currentUser: any = null;
   successMessage: string = '';
   errorMessage: string = '';
+  isLoading: boolean = false;
   signupForm: FormGroup;
   loginForm: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private authService: AuthService, private dataService: DataService) {
     this.signupForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,20}$/)]],
@@ -36,46 +40,44 @@ export class CompteComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.checkIfConnected();
-    this.initializeGoogleSignIn();
-  }
+    // Attendre que la session Supabase soit chargée, puis vérifier l'état de connexion
+    this.authService.ensureSessionLoaded().then(() => {
+      this.checkIfConnected();
+    });
 
-  private initializeGoogleSignIn() {
-    if ((window as any).google) {
-      try {
-        (window as any).google.accounts.id.initialize({
-          client_id: '897272620325-ibvmg49op2gr8cu0g8vd45e9shp2ea5a.apps.googleusercontent.com',
-          callback: (response: any) => {
-            console.log('Google token received');
-            if (response.credential) {
-              this.handleGoogleToken(response.credential);
-            }
-          }
-        });
-      } catch (error) {
-        console.error('Erreur lors de l\'initialisation de Google Sign In:', error);
+    // Écouter les changements d'authentification (pour OAuth et localStorage)
+    this.authService.currentUser$.subscribe(user => {
+      if (user) {
+        this.currentUser = { email: user.email, name: user.email?.split('@')[0] };
+        this.isConnected = true;
+      } else {
+        // Vérifier localStorage si Supabase n'a rien
+        this.checkIfConnected();
       }
-    }
-  }
-
-  private handleGoogleToken(token: string) {
-    // Google login - stockage local uniquement pour démo
-    const googleUser = { email: 'user@google.com', name: 'Google User', method: 'google' };
-    localStorage.setItem('user', JSON.stringify(googleUser));
-    this.currentUser = googleUser;
-    this.isConnected = true;
-    this.successMessage = 'Connexion Google réussie !';
-    this.errorMessage = '';
-    setTimeout(() => {
-      this.close();
-    }, 1500);
+    });
   }
 
   checkIfConnected() {
-    const user = localStorage.getItem('user');
-    if (user) {
-      this.currentUser = JSON.parse(user);
+    // Vérifier d'abord dans Supabase
+    const supabaseUser = this.authService.getCurrentUser();
+    if (supabaseUser) {
+      this.currentUser = { email: supabaseUser.email, name: supabaseUser.email?.split('@')[0] };
       this.isConnected = true;
+      return;
+    }
+    
+    // Sinon vérifier dans localStorage (pour les inscriptions/connexions normales)
+    const localUser = localStorage.getItem('user');
+    if (localUser) {
+      try {
+        this.currentUser = JSON.parse(localUser);
+        this.isConnected = true;
+      } catch (e) {
+        console.error('Erreur parsing user:', e);
+        this.isConnected = false;
+      }
+    } else {
+      this.isConnected = false;
     }
   }
 
@@ -108,68 +110,94 @@ export class CompteComponent implements OnInit {
 
   onSignup() {
     if (this.signupForm.valid) {
+      this.isLoading = true;
       const { email, password } = this.signupForm.value;
-      // Inscription locale - stockage dans localStorage pour démo
-      const user = { email, name: email.split('@')[0] };
-      localStorage.setItem('user', JSON.stringify(user));
-      this.currentUser = user;
-      this.isConnected = true;
-      this.successMessage = 'Inscription réussie ! Bienvenue !';
-      this.errorMessage = '';
-      this.signupForm.reset();
-      setTimeout(() => {
-        this.close();
-      }, 1500);
+
+      this.dataService.signup(email, password).subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          localStorage.setItem('user', JSON.stringify(response.user));
+          this.successMessage = 'Inscription réussie ! Bienvenue !';
+          this.errorMessage = '';
+          this.signupForm.reset();
+          this.showSignupForm = false;
+          // Forcer la vérification de la connexion
+          this.checkIfConnected();
+          // Fermer le modal après un court délai pour voir le message
+          setTimeout(() => this.close(), 1500);
+        },
+        error: (err) => {
+          this.isLoading = false;
+          this.errorMessage = err.error?.error || 'Erreur lors de l\'inscription';
+          console.error('Signup error:', err);
+        }
+      });
     }
   }
 
   onLogin() {
     if (this.loginForm.valid) {
+      this.isLoading = true;
       const { email, password, rememberMe } = this.loginForm.value;
-      // Login local - stockage dans localStorage pour démo
-      const user = { email, name: email.split('@')[0] };
-      localStorage.setItem('user', JSON.stringify(user));
-      if (rememberMe) {
-        localStorage.setItem('rememberMe', 'true');
-      }
-      this.currentUser = user;
-      this.isConnected = true;
-      this.successMessage = 'Connexion réussie !';
-      this.errorMessage = '';
-      this.loginForm.reset();
-      setTimeout(() => {
-        this.close();
-      }, 1500);
+
+      this.dataService.login(email, password).subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          localStorage.setItem('user', JSON.stringify(response.user));
+          if (rememberMe) {
+            localStorage.setItem('rememberMe', 'true');
+          }
+          this.successMessage = 'Connexion réussie !';
+          this.errorMessage = '';
+          this.loginForm.reset();
+          this.showLoginForm = false;
+          // Forcer la vérification de la connexion
+          this.checkIfConnected();
+          // Fermer le modal après un court délai pour voir le message
+          setTimeout(() => this.close(), 1500);
+        },
+        error: (err) => {
+          this.isLoading = false;
+          this.errorMessage = err.error?.error || 'Erreur lors de la connexion';
+          console.error('Login error:', err);
+        }
+      });
     }
   }
 
   logout() {
     localStorage.removeItem('user');
-    this.isConnected = false;
-    this.currentUser = null;
-    this.successMessage = 'Déconnexion réussie';
-    this.errorMessage = '';
-    this.loginForm.reset();
-    this.signupForm.reset();
-    setTimeout(() => {
-      this.close();
-    }, 1500);
+    this.isLoading = true;
+    this.authService.logout().then(({ error }) => {
+      this.isLoading = false;
+      if (!error) {
+        this.isConnected = false;
+        this.currentUser = null;
+        this.successMessage = 'Déconnexion réussie';
+        this.errorMessage = '';
+        this.loginForm.reset();
+        this.signupForm.reset();
+        // Laisser voir le message quelques secondes
+        setTimeout(() => {
+          this.close();
+        }, 1500);
+      } else {
+        this.errorMessage = 'Erreur lors de la déconnexion';
+      }
+    });
   }
 
   onGoogleLogin() {
+    this.isLoading = true;
     this.clearMessages();
-    if ((window as any).google) {
-      try {
-        (window as any).google.accounts.id.prompt((notification: any) => {
-          console.log('Google prompt notified:', notification);
-        });
-      } catch (error) {
-        console.error('Erreur lors du lancement de Google Sign In:', error);
-        this.errorMessage = 'Erreur lors de la connexion Google. Verifiez que le Client ID est correct.';
+    this.authService.loginWithGoogle().then(({ error }) => {
+      this.isLoading = false;
+      if (error) {
+        this.errorMessage = error.message || 'Erreur lors de la connexion Google';
+        console.error('Google login error:', error);
       }
-    } else {
-      this.errorMessage = 'Google Identity Services n\'est pas disponible. Veuillez actualiser la page.';
-    }
+      // La redirection se fera automatiquement
+    });
   }
 
   close(): void {
