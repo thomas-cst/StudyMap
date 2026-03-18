@@ -37,6 +37,25 @@ export class CompteComponent implements OnInit {
 
   ngOnInit() {
     this.checkIfConnected();
+    this.initializeGoogleSignIn();
+  }
+
+  private initializeGoogleSignIn() {
+    if ((window as any).google) {
+      try {
+        (window as any).google.accounts.id.initialize({
+          client_id: '897272620325-ibvmg49op2gr8cu0g8vd45e9shp2ea5a.apps.googleusercontent.com',
+          callback: (response: any) => {
+            console.log('Google token received');
+            if (response.credential) {
+              this.handleGoogleToken(response.credential);
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Erreur lors de l\'initialisation de Google Sign In:', error);
+      }
+    }
   }
 
   private handleGoogleToken(token: string) {
@@ -141,16 +160,6 @@ export class CompteComponent implements OnInit {
     this.clearMessages();
     if ((window as any).google) {
       try {
-        (window as any).google.accounts.id.initialize({
-          client_id: '897272620325-ibvmg49op2gr8cu0g8vd45e9shp2ea5a.apps.googleusercontent.com',
-          callback: (response: any) => {
-            console.log('Google token received');
-            if (response.credential) {
-              this.handleGoogleToken(response.credential);
-            }
-          }
-        });
-        
         (window as any).google.accounts.id.prompt((notification: any) => {
           console.log('Google prompt notified:', notification);
         });
