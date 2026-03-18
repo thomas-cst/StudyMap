@@ -7,8 +7,11 @@ const pool = mysql.createPool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  port: process.env.DB_PORT || 3306,
   waitForConnections: true,
-  connectionLimit: 10
+  connectionLimit: 10,
+  queueLimit: 0,
+  connectTimeout: 20000 // 20 secondes de timeout
 });
 
 module.exports = pool.promise(); // On utilise .promise() pour utiliser async/await plus tard

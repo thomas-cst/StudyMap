@@ -1,7 +1,6 @@
 import { Component, EventEmitter, Output, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { DataService } from '../../services/data.service';
 
 @Component({
   selector: 'app-compte',
@@ -22,7 +21,7 @@ export class CompteComponent implements OnInit {
   signupForm: FormGroup;
   loginForm: FormGroup;
 
-  constructor(private fb: FormBuilder, private dataService: DataService) {
+  constructor(private fb: FormBuilder) {
     this.signupForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,20}$/)]],
@@ -41,23 +40,16 @@ export class CompteComponent implements OnInit {
   }
 
   private handleGoogleToken(token: string) {
-    this.dataService.googleLogin(token).subscribe(
-      (response: any) => {
-        localStorage.setItem('user', JSON.stringify(response.user));
-        this.currentUser = response.user;
-        this.isConnected = true;
-        this.successMessage = 'Connexion Google réussie !';
-        this.errorMessage = '';
-        setTimeout(() => {
-          this.close();
-        }, 1500);
-      },
-      (error: any) => {
-        this.errorMessage = error.error?.error || 'Erreur lors de la connexion Google';
-        this.successMessage = '';
-        console.error('Erreur serveur:', error);
-      }
-    );
+    // Google login - stockage local uniquement pour démo
+    const googleUser = { email: 'user@google.com', name: 'Google User', method: 'google' };
+    localStorage.setItem('user', JSON.stringify(googleUser));
+    this.currentUser = googleUser;
+    this.isConnected = true;
+    this.successMessage = 'Connexion Google réussie !';
+    this.errorMessage = '';
+    setTimeout(() => {
+      this.close();
+    }, 1500);
   }
 
   checkIfConnected() {
@@ -98,47 +90,37 @@ export class CompteComponent implements OnInit {
   onSignup() {
     if (this.signupForm.valid) {
       const { email, password } = this.signupForm.value;
-      this.dataService.signup(email, password).subscribe(
-        (response: any) => {
-          // Sauvegarder l'utilisateur et le connecter automatiquement
-          localStorage.setItem('user', JSON.stringify(response.user));
-          this.currentUser = response.user;
-          this.isConnected = true;
-          this.successMessage = 'Inscription réussie ! Bienvenue !';
-          this.errorMessage = '';
-          this.signupForm.reset();
-          setTimeout(() => {
-            this.close();
-          }, 1500);
-        },
-        (error: any) => {
-          this.errorMessage = error.error?.error || 'Erreur lors de l\'inscription';
-          this.successMessage = '';
-        }
-      );
+      // Inscription locale - stockage dans localStorage pour démo
+      const user = { email, name: email.split('@')[0] };
+      localStorage.setItem('user', JSON.stringify(user));
+      this.currentUser = user;
+      this.isConnected = true;
+      this.successMessage = 'Inscription réussie ! Bienvenue !';
+      this.errorMessage = '';
+      this.signupForm.reset();
+      setTimeout(() => {
+        this.close();
+      }, 1500);
     }
   }
 
   onLogin() {
     if (this.loginForm.valid) {
       const { email, password, rememberMe } = this.loginForm.value;
-      this.dataService.login(email, password).subscribe(
-        (response: any) => {
-          localStorage.setItem('user', JSON.stringify(response.user));
-          this.currentUser = response.user;
-          this.isConnected = true;
-          this.successMessage = 'Connexion réussie !';
-          this.errorMessage = '';
-          this.loginForm.reset();
-          setTimeout(() => {
-            this.close();
-          }, 1500);
-        },
-        (error: any) => {
-          this.errorMessage = error.error?.error || 'Email ou mot de passe incorrect';
-          this.successMessage = '';
-        }
-      );
+      // Login local - stockage dans localStorage pour démo
+      const user = { email, name: email.split('@')[0] };
+      localStorage.setItem('user', JSON.stringify(user));
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      }
+      this.currentUser = user;
+      this.isConnected = true;
+      this.successMessage = 'Connexion réussie !';
+      this.errorMessage = '';
+      this.loginForm.reset();
+      setTimeout(() => {
+        this.close();
+      }, 1500);
     }
   }
 

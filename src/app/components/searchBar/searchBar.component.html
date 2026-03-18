@@ -5,7 +5,9 @@
     </svg>
 
     <!-- input + déclenchement sur entrée ou bouton -->
-    <input #inputEl type="text" placeholder="rechercher une ville"
-           (keyup.enter)="onSearch(inputEl.value)" />
-    <button (click)="onSearch(inputEl.value)">Rechercher</button>
+    <input [(ngModel)]="inputValue" 
+           type="text" 
+           placeholder="rechercher une ville"
+           (keyup.enter)="onSearch(inputValue)" />
+    <button (click)="onSearch(inputValue)">Rechercher</button>
 </div>

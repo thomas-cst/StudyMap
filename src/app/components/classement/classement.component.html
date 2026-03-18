@@ -1,6 +1,6 @@
 <div class="classement">
     <div class="recherches">
-        <app-searchBar (search)="onSearch($event)"></app-searchBar>
+        <app-searchBar [query]="query" (search)="onSearch($event)"></app-searchBar>
         
         <app-filtre></app-filtre>
         

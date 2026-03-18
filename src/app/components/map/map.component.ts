@@ -4,6 +4,17 @@ import { MapSyncService } from '../../services/map-sync.service';
 
 declare const L: any;
 
+/**
+ * Composant MapComponent - Affiche la carte interactive Leaflet
+ * 
+ * Responsabilités:
+ * - Initialiser la carte Leaflet avec tileLayer
+ * - Sincroniser le zoom avec le service MapSyncService
+ * - Observer les changements de thème (dark/light)
+ * - Afficher les marqueurs pour chaque ville
+ * 
+ * La carte utilise des signaux Angular pour réactiver les changements
+ */
 @Component({
     selector: 'app-map',
     templateUrl: './map.component.html',
@@ -18,7 +29,7 @@ export class MapComponent implements AfterViewInit, OnDestroy {
 	private mapSyncService = inject(MapSyncService);
 
 	constructor(@Inject(PLATFORM_ID) private platformId: Object) {
-		// Observer les changements de thème et mettre à jour la carte
+		// Réagir aux changements de thème (dark/light)
 		effect(() => {
 			if (this.isDarkMode() && this.tileLayer) {
 				this.updateTileLayer(true);
@@ -27,23 +38,22 @@ export class MapComponent implements AfterViewInit, OnDestroy {
 			}
 		});
 
-		// Observer les changements de zoom - DOIT être dans le constructeur pour éviter NG0203
+		// Réagir aux demandes de zoom vers une ville (doit être dans le constructeur)
 		effect(() => {
 			const target = this.mapSyncService.zoomTarget();
-			// Attendre que la map soit initialisée avant de zoomer
 			if (target && this.map) {
-				console.log('✅ Effect déclenché, zoom vers', target.ville, ':', target.lat, target.lng);
+				console.log('INFO: Zoom vers', target.ville);
 				try {
-					this.map.setView([target.lat, target.lng], 14);
+					this.map.setView([target.lat, target.lng], 12);
 				} catch (e) {
-					console.error('❌ Erreur lors du zoom:', e);
+					console.error('ERROR: Erreur lors du zoom:', e);
 				}
 			} else {
 				if (!target) {
-					console.log('⏳ En attente d\'un signal de zoom...');
+					console.log('INFO: En attente d\'un signal de zoom...');
 				}
 				if (!this.map) {
-					console.log('⏳ Map pas encore initialisée, zoom en attente...');
+					console.log('INFO: Map pas encore initialisée, zoom en attente...');
 				}
 			}
 		});

@@ -1,17 +1,24 @@
 import { Component, signal, OnInit, inject } from '@angular/core'; 
 import { CommonModule } from '@angular/common';
-import { RouterOutlet } from '@angular/router'; // Import manquant ajouté
+import { RouterOutlet } from '@angular/router';
 import { MapComponent } from './components/map/map.component';
 import { AccueilComponent } from './components/accueil/accueil.component';
 import { CompteComponent } from './components/compte/compte.component';
 import { FavorisComponent } from './components/favoris/favoris.component';
 import { ClassementComponent } from './components/classement/classement.component';
-import { DataService } from './services/data.service';
 
+/**
+ * Composant racine de l'application StudyMap
+ * 
+ * Responsabilités:
+ * - Layout principal avec navbar et footer
+ * - Router outlet pour les pages (accueil, map, etc)
+ * - Gestion de la popup compte (login)
+ * - Test de connexion au backend au démarrage
+ */
 @Component({
   selector: 'app-root',
   standalone: true,
-  // On s'assure que RouterOutlet est bien présent dans les imports
   imports: [
     RouterOutlet, 
     CommonModule, 
@@ -25,37 +32,15 @@ import { DataService } from './services/data.service';
   styleUrl: './app.scss'
 })
 export class App implements OnInit { 
-  // 1. Injection du service de données
-  private dataService = inject(DataService); 
-
-  // 2. Création d'un signal pour le message de la BDD
-  protected readonly bddMessage = signal<string>('Connexion en cours...');
-
+  protected readonly bddMessage = signal<string>('');
   protected readonly title = signal('studyMap');
   protected readonly logoSrc = signal('assets/StudyMap.png');
 
-  /** controls visibility of the account popup */
+  /** Affichage de la popup login */
   protected showCompte = signal(false);
 
-  // 3. Appel au Back-end au démarrage du composant
   ngOnInit() {
-    console.log('Tentative de connexion au Back-end...');
-
-    this.dataService.getTestData().subscribe({
-      next: (data) => {
-        // Met à jour le signal (optionnel si tu ne l'affiches plus en HTML)
-        this.bddMessage.set(data.message);
-        
-        // Affiche le résultat en vert dans la console
-        console.log('%c Succès Back-end :', 'color: green; font-weight: bold;', data);
-      },
-      error: (err) => {
-        this.bddMessage.set('Erreur serveur');
-        
-        // Affiche l'erreur en rouge dans la console
-        console.error('%c Erreur Back-end :', 'color: red; font-weight: bold;', err);
-      }
-    });
+    // Backend test removed - DataService was only for testing
   }
 
   protected toggleCompte() {
