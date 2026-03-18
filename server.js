@@ -28,9 +28,13 @@ require('dotenv').config();
 const app = express();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// ====================================================
-// MIDDLEWARE
-// ====================================================
+// CORS configuration - Autorise uniquement le frontend
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+  credentials: true
+};
+app.use(cors(corsOptions));
+app.use(express.json()); // Permet de lire les données JSON envoyées par le front
 
 // CORS: Autoriser Angular (port 4200) et autres origins à appeler ce serveur
 app.use(cors());
@@ -90,7 +94,6 @@ app.post('/api/signup', async (req, res) => {
   try {
     // Vérifier si l'utilisateur existe déjà
     const [existingUser] = await db.query('SELECT id_user FROM Users WHERE email = ?', [email]);
-
     if (existingUser.length > 0) {
       return res.status(400).json({ error: 'Utilisateur déjà existant' });
     }
@@ -168,7 +171,6 @@ app.post('/api/google-login', async (req, res) => {
   try {
     // Vérifier et décoder le token Google
     const ticket = await googleClient.verifyIdToken({
-      idToken: googleToken,
       audience: process.env.GOOGLE_CLIENT_ID
     });
 

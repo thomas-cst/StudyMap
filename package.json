@@ -9,7 +9,8 @@
     "test": "ng test",
     "serve:ssr:studyMap": "node dist/studyMap/server/server.mjs",
     "dev": "nodemon server.js",
-    "server": "node server.js"
+    "server": "node server.js",
+    "init-db": "node init-db.js"
   },
   "prettier": {
     "printWidth": 100,

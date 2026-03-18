@@ -27,6 +27,7 @@ import { Observable, map, forkJoin, of, switchMap, catchError, concatMap, first,
  * Interface: une Ville avec ses infos de base
  */
 export interface Ville {
+  id_ville?: number;
   nom: string;
   code: string;        // Code INSEE (identifiant unique communal français)
   imageUrl: string;    // URL Wikipedia de l'image

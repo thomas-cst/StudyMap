@@ -28,10 +28,10 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   private destroyRef = inject(DestroyRef);
 
   /** données des villes chargées dynamiquement */
-  private villes = signal<Ville[]>([]);
+  villes = computed(() => this.favorisService.favoris());
 
   /** loading state */
-  isLoading = signal(true);
+  isLoading = computed(() => this.villes().length === 0);
 
   /** ville agrandie dans la grille */
   expandedVille = signal<Ville | null>(null);
@@ -43,51 +43,7 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   private isManualSelection = signal<boolean>(false);
 
   ngOnInit() {
-    this.loadVilles();
-  }
-
-  private loadVilles() {
-    this.isLoading.set(true);
-    this.villesService.getVilles().subscribe({
-      next: (villes) => {
-        this.villes.set(villes);
-        this.isLoading.set(false);
-      },
-      error: (err) => {
-        console.error('Erreur lors du chargement des villes:', err);
-        this.isLoading.set(false);
-        // Fallback
-        this.villes.set([]);
-      }
-    });
-  }
-  /** auto-expand celui qui match la recherche */
-  constructor() {
-    effect(() => {
-      const q = this.querySignal().trim().toLowerCase();
-      const isManual = this.isManualSelection();
-      
-      // Si requête est vide et pas de sélection manuelle, fermer
-      if (!q && !isManual) {
-        this.expandedVille.set(null);
-        return;
-      }
-      
-      // Si sélection manuelle ET la query change (changement de recherche), ignorer la recherche
-      if (isManual && q) {
-        return; // Garder la sélection manuelle, ignorer la recherche
-      }
-      
-      // Logique de recherche (seulement si pas de sélection manuelle)
-      if (!isManual && q) {
-        const matching = this.filtered().find(v => v.nom.toLowerCase().includes(q));
-        if (matching && matching.code !== this.expandedVille()?.code) {
-          this.expandedVille.set(matching);
-          this.lastZoomedVille.set(matching.code);
-          this.expandAndZoom(matching);
-        }
-      }
-    });
+    // On n'a pas besoin d'effect ici - les villes viennent du service
   }
 
   /** sync les changements d'Input avec le signal local */
@@ -101,13 +57,13 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
 
   /** affiche les favoris filtrés par query */
   filtered = computed(() => {
-    const fav = this.villes().filter(v => this.favorisService.isFavoris(v.nom));
+    const villes = this.villes();
     const q = this.querySignal().trim().toLowerCase();
     const recent = this.mapSyncService.recentlyViewed();
     
-    let result = fav;
+    let result = villes;
     if (q) {
-      result = fav.filter(v => v.nom.toLowerCase().includes(q));
+      result = villes.filter(v => v.nom.toLowerCase().includes(q));
     }
     
     // Trier: d'abord les villes récemment consultées, puis le reste
@@ -137,8 +93,8 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   });
 
   /** toggle une ville en favoris */
-  toggleFavoris(nom: string) {
-    this.favorisService.toggleFavoris(nom);
+  toggleFavoris(ville: Ville) {
+    this.favorisService.toggleFavoris(ville);
   }
 
   /** check si une ville est en favoris */
