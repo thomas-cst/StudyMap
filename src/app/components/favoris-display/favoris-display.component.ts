@@ -6,105 +6,44 @@ import { VillesService, Ville } from '../../services/villes.service';
 import { MapSyncService } from '../../services/map-sync.service';
 import { SearchSyncService } from '../../services/search-sync.service';
 
-/**
- * Composant ResultatsComponent - Affiche la liste des villes avec filtrage
- * 
- * Responsabilités:
- * - Charger les 48 villes depuis le backend
- * - Filtrer basé sur la barre de recherche
- * - Afficher les villes dans une grille
- * - Marquer les favoris
- * - Synchroniser le zoom de la carte quand on clique une ville
- * 
- * Signaux principaux:
- * - villes: liste complète des 48 villes
- * - querySignal: terme de recherche
- * - isLoading: état du chargement
- */
 @Component({
-  selector: 'app-resultats', 
+  selector: 'app-favoris-display', 
   standalone: true,        
   imports: [CommonModule],            
-  templateUrl: './resultats.component.html',
-  styleUrl: './resultats.component.scss'
+  templateUrl: './favoris-display.component.html',
+  styleUrl: './favoris-display.component.scss'
 })
-export class ResultatsComponent implements OnChanges, OnInit {
-  /** Terme de recherche passé par le parent AccueilComponent */
+export class FavorisDisplayComponent implements OnChanges, OnInit {
   @Input() query = '';
 
+  /** signal local pour tracker la query */
   private querySignal = signal('');
+
   private favorisService = inject(FavorisService);
   private villesService = inject(VillesService);
   private mapSyncService = inject(MapSyncService);
   private searchSyncService = inject(SearchSyncService);
+
+  /** destroy ref pour nettoyer les subscriptions */
   private destroyRef = inject(DestroyRef);
 
-  /** Liste complète des villes chargées depuis le backend */
-  private villes = signal<Ville[]>([]);
+  /** données des villes chargées dynamiquement */
+  villes = computed(() => this.favorisService.favoris());
 
-  /** État du chargement initial */
-  isLoading = signal(true);
+  /** loading state */
+  isLoading = computed(() => this.villes().length === 0);
 
-  /** Signal des favoris pour le template */
-  get favoris() {
-    return this.favorisService.favoris;
-  }
-
-  /** Ville actuellement agrandie dans la grille (pour vue détail) */
+  /** ville agrandie dans la grille */
   expandedVille = signal<Ville | null>(null);
 
-  /** Évite de zoomer deux fois sur la même ville */
+  /** track la dernière ville zoomée pour éviter les appels API dupliqués */
   private lastZoomedVille = signal<string | null>(null);
 
-  /** Évite que la recherche n'override une sélection manuelle */
+  /** track si la dernière sélection était manuelle (clic) ou via la recherche */
   private isManualSelection = signal<boolean>(false);
 
   ngOnInit() {
-    this.loadVilles();
-  }
-
-  private loadVilles() {
-    this.isLoading.set(true);
-    this.villesService.getVilles().subscribe({
-      next: (villes) => {
-        this.villes.set(villes);
-        this.isLoading.set(false);
-      },
-      error: (err) => {
-        console.error('ERROR: Chargement des villes échoué:', err);
-        this.isLoading.set(false);
-        this.villes.set([]);
-      }
-    });
-  }
-
-  constructor() {
-    // Auto-expand la ville qui match la recherche
-    effect(() => {
-      const q = this.querySignal().trim().toLowerCase();
-      const isManual = this.isManualSelection();
-      
-      // Si requête est vide et pas de sélection manuelle, fermer
-      if (!q && !isManual) {
-        this.expandedVille.set(null);
-        return;
-      }
-      
-      // Si sélection manuelle ET la query change (changement de recherche), ignorer la recherche
-      if (isManual && q) {
-        return; // Garder la sélection manuelle, ignorer la recherche
-      }
-      
-      // Logique de recherche (seulement si pas de sélection manuelle)
-      if (!isManual && q) {
-        const matching = this.villes().find(v => v.nom.toLowerCase().includes(q));
-        if (matching && matching.code !== this.expandedVille()?.code) {
-          this.expandedVille.set(matching);
-          this.lastZoomedVille.set(matching.code);
-          this.expandAndZoom(matching);
-        }
-      }
-    });
+    // On n'a pas besoin d'effect ici - les villes viennent du service
   }
 
   /** sync les changements d'Input avec le signal local */
@@ -116,18 +55,25 @@ export class ResultatsComponent implements OnChanges, OnInit {
     }
   }
 
-  /** affiche TOUTES les villes */
+  /** affiche les favoris filtrés par query */
   filtered = computed(() => {
-    const all = this.villes();
+    const villes = this.villes();
+    const q = this.querySignal().trim().toLowerCase();
     const recent = this.mapSyncService.recentlyViewed();
     
-    if (recent.length === 0) return all;
+    let result = villes;
+    if (q) {
+      result = villes.filter(v => v.nom.toLowerCase().includes(q));
+    }
     
-    // Créer un Map pour des lookups O(1) des codes INSEE au lieu du nom
+    // Trier: d'abord les villes récemment consultées, puis le reste
+    if (recent.length === 0) return result;
+    
+    // Créer un Map pour des lookups O(1) des codes INSEE
     const recentMap = new Map(recent.map((code, i) => [code, i]));
     
     // Trier sans muter l'array original
-    return [...all].sort((a, b) => {
+    return [...result].sort((a, b) => {
       const aIndex = recentMap.get(a.code);
       const bIndex = recentMap.get(b.code);
       
@@ -146,11 +92,6 @@ export class ResultatsComponent implements OnChanges, OnInit {
     });
   });
 
-  /** villes uniquement dans les favoris */
-  favorisFiltered = computed(() => {
-    return this.villes().filter(v => this.favorisService.isFavoris(v.nom));
-  });
-
   /** toggle une ville en favoris */
   toggleFavoris(ville: Ville) {
     this.favorisService.toggleFavoris(ville);
@@ -161,19 +102,14 @@ export class ResultatsComponent implements OnChanges, OnInit {
     return this.favorisService.isFavoris(nom);
   }
 
-  /** encode URI pour les URLs */
-  encodeURIComponent(str: string): string {
-    return encodeURIComponent(str);
-  }
-
   /** Méthode commune pour expand + zoom */
   private expandAndZoom(ville: Ville) {
-    // Remonter vers la liste des résultats (chercher l'élément avec classe 'resultats')
+    // Remonter vers la liste des favoris (chercher l'élément avec classe 'favoris-display')
     // Utiliser un délai pour laisser le DOM se mettre à jour
     setTimeout(() => {
-      const resultatsElement = document.querySelector('.resultats');
-      if (resultatsElement) {
-        resultatsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const favorisElement = document.querySelector('.favoris-display');
+      if (favorisElement) {
+        favorisElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } else {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -218,5 +154,10 @@ export class ResultatsComponent implements OnChanges, OnInit {
   /** check si une ville est agrandie */
   isExpanded(ville: Ville): boolean {
     return this.expandedVille()?.code === ville.code;
+  }
+
+  /** encode URI pour les URLs */
+  encodeURIComponent(str: string): string {
+    return encodeURIComponent(str);
   }
 }

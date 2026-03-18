@@ -1,24 +1,47 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, signal, OnInit, inject } from '@angular/core'; 
 import { CommonModule } from '@angular/common';
+import { RouterOutlet } from '@angular/router';
 import { MapComponent } from './components/map/map.component';
 import { AccueilComponent } from './components/accueil/accueil.component';
 import { CompteComponent } from './components/compte/compte.component';
 import { FavorisComponent } from './components/favoris/favoris.component';
 import { ClassementComponent } from './components/classement/classement.component';
 
+/**
+ * Composant racine de l'application StudyMap
+ * 
+ * Responsabilités:
+ * - Layout principal avec navbar et footer
+ * - Router outlet pour les pages (accueil, map, etc)
+ * - Gestion de la popup compte (login)
+ * - Test de connexion au backend au démarrage
+ */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CommonModule, MapComponent,  AccueilComponent, CompteComponent, FavorisComponent, ClassementComponent, CommonModule],
+  standalone: true,
+  imports: [
+    RouterOutlet, 
+    CommonModule, 
+    MapComponent, 
+    AccueilComponent, 
+    CompteComponent, 
+    FavorisComponent, 
+    ClassementComponent
+  ],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App {
+export class App implements OnInit { 
+  protected readonly bddMessage = signal<string>('');
   protected readonly title = signal('studyMap');
   protected readonly logoSrc = signal('assets/StudyMap.png');
 
-  /** controls visibility of the account popup */
+  /** Affichage de la popup login */
   protected showCompte = signal(false);
+
+  ngOnInit() {
+    // Backend test removed - DataService was only for testing
+  }
 
   protected toggleCompte() {
     this.showCompte.set(!this.showCompte());
@@ -27,6 +50,7 @@ export class App {
   protected closeCompte() {
     this.showCompte.set(false);
   }
+  
   protected readonly componentActif = signal<'accueil' | 'favoris' | 'classement'>('accueil');
 
   protected onThemeToggle() {
@@ -35,11 +59,9 @@ export class App {
     const conteneurTheme = document.getElementById('changerTheme');
     const iconeTheme = conteneurTheme ? conteneurTheme.querySelector('svg') as HTMLElement | null : null;
 
-    // bascule et persiste
     const isDark = document.body.classList.toggle('dark-mode');
     try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch {}
 
-    // images dans /src/assets
     if (isDark) {
       this.logoSrc.set('assets/6.png');
       if (iconeTheme) {

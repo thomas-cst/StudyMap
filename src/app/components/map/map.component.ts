@@ -1,8 +1,20 @@
-import { Component, AfterViewInit, OnDestroy, ViewChild, ElementRef, Inject, PLATFORM_ID, signal, effect } from '@angular/core';
+import { Component, AfterViewInit, OnDestroy, ViewChild, ElementRef, Inject, PLATFORM_ID, signal, effect, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { MapSyncService } from '../../services/map-sync.service';
 
 declare const L: any;
 
+/**
+ * Composant MapComponent - Affiche la carte interactive Leaflet
+ * 
+ * Responsabilités:
+ * - Initialiser la carte Leaflet avec tileLayer
+ * - Sincroniser le zoom avec le service MapSyncService
+ * - Observer les changements de thème (dark/light)
+ * - Afficher les marqueurs pour chaque ville
+ * 
+ * La carte utilise des signaux Angular pour réactiver les changements
+ */
 @Component({
     selector: 'app-map',
     templateUrl: './map.component.html',
@@ -14,14 +26,35 @@ export class MapComponent implements AfterViewInit, OnDestroy {
     private map: any;
 	private tileLayer: any;
 	private isDarkMode = signal(false);
+	private mapSyncService = inject(MapSyncService);
 
 	constructor(@Inject(PLATFORM_ID) private platformId: Object) {
-		// Observer les changements de thème et mettre à jour la carte
+		// Réagir aux changements de thème (dark/light)
 		effect(() => {
 			if (this.isDarkMode() && this.tileLayer) {
 				this.updateTileLayer(true);
 			} else if (this.tileLayer) {
 				this.updateTileLayer(false);
+			}
+		});
+
+		// Réagir aux demandes de zoom vers une ville (doit être dans le constructeur)
+		effect(() => {
+			const target = this.mapSyncService.zoomTarget();
+			if (target && this.map) {
+				console.log('INFO: Zoom vers', target.ville);
+				try {
+					this.map.setView([target.lat, target.lng], 12);
+				} catch (e) {
+					console.error('ERROR: Erreur lors du zoom:', e);
+				}
+			} else {
+				if (!target) {
+					console.log('INFO: En attente d\'un signal de zoom...');
+				}
+				if (!this.map) {
+					console.log('INFO: Map pas encore initialisée, zoom en attente...');
+				}
 			}
 		});
 	}

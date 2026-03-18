@@ -1,13 +1,13 @@
 <div class="resultats">
   <!-- Loading state -->
-  <div *ngIf="isLoading()" class="loading">
-    <p>Chargement des villes...</p>
+  <div *ngIf="villes().length === 0" class="loading">
+    <p>Aucun favori pour le moment</p>
   </div>
 
-  <!-- Grille de résultats -->
-  <ng-container *ngIf="!isLoading() && filtered().length; else empty">
+  <!-- Grille de favoris -->
+  <ng-container *ngIf="villes().length > 0; else empty">
     <div class="ville-card" 
-         *ngFor="let v of filtered()" 
+         *ngFor="let v of villes()" 
          [style.backgroundImage]="'url(' + (v.imageUrl || 'https://via.placeholder.com/400x300/cccccc/000000?text=' + encodeURIComponent(v.nom)) + ')'"
          [class.expanded]="isExpanded(v)">
       
@@ -17,7 +17,7 @@
         <button class="btn-favoris" 
                 [class.active]="isFavoris(v.nom)"
                 (click)="toggleFavoris(v)"
-                title="Ajouter aux favoris">
+                title="Retirer des favoris">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="heart-icon">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
@@ -62,7 +62,6 @@
     </div>
   </ng-container>
   <ng-template #empty>
-    <p *ngIf="query">Aucun résultat pour « {{ query }} ».</p>
-    <p *ngIf="!query">Aucune ville sélectionnée.</p>
+    <p>Aucune ville dans les favoris pour le moment.</p>
   </ng-template>
 </div>
