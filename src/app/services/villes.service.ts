@@ -45,6 +45,25 @@ export class VillesService {
     'Fort-de-France', 'Pointe-à-Pitre', 'Cayenne', 'Saint-Denis', 'Mamoudzou', 'Nouméa', 'Papeete','Dembeni','Punaauia'
   ]);
 
+  //Villes proches de la mer
+  private villesMer = new Set(['Brest', 'Lorient', 'Nantes', 'La Rochelle', 'Bordeaux',
+    'Bayonne','Montpellier', 'Perpignan', 'Marseille', 'Toulon', 'Nice', 'Aix-en-Provence',
+    'Caen', 'Le Havre', 'Rouen', 'Dunkerque','Ajaccio', 'Corte',
+  ]);
+
+  // Villes montagneuses
+  private villesMontagne = new Set([
+    'Grenoble', 'Chambéry', 'Annecy', 'Valence', 'Gap',
+    'Clermont-Ferrand', 'Aurillac', 'Le Puy-en-Velay',
+    'Besançon', 'Belfort', 'Mulhouse', 'Colmar', 'Strasbourg',
+    'Metz', 'Nancy', 'Épinal',
+    'Nice', 'Digne-les-Bains',
+    'Pau', 'Tarbes', 'Foix',
+    'Perpignan', 'Montpellier',
+    'Bourg-en-Bresse', 'Lons-le-Saunier',
+  ]);
+
+
   // Cache des coordonnées (vide au départ, se remplit via Wikidata)
   private coordinatesCache: { [key: string]: { lat: number; lng: number } } = {};
 
@@ -52,6 +71,18 @@ export class VillesService {
   private villesCache: Ville[] | null = null;
 
   constructor(private http: HttpClient) { }
+
+
+  //Vérifie si une ville est en bord de mer
+  isVilleMer(nom: string): boolean {
+    return this.villesMer.has(nom);
+  }
+ 
+  // Vérifie si une ville est en montagne
+  isVilleMontagne(nom: string): boolean {
+    return this.villesMontagne.has(nom);
+  }
+ 
 
   /**
    * Récupère la liste des villes avec universités via l'API Data ESR

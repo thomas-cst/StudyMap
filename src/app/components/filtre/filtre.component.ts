@@ -1,4 +1,4 @@
-import { Component, signal,input,output } from '@angular/core';
+import { Component, signal,input,output,inject, ElementRef, HostListener  } from '@angular/core';
 
 @Component({
 	selector: 'app-filtre',
@@ -16,11 +16,20 @@ export class FiltreComponent {
 	budgetMin = signal(200);
     budgetMax = signal(5000);
 
+    private elementRef = inject(ElementRef);
+
+    //Ferme le menu si on clique en dehors du composant
+    @HostListener('document:click', ['$event'])
+    onDocumentClick(event: MouseEvent) {
+        if (this.isMenuActive() && !this.elementRef.nativeElement.contains(event.target)) {
+            this.isMenuActive.set(false);
+        }
+    }
+ 
 	clicBouton() {
 		this.isMenuActive.update(value => !value);
 	}
 
-    // Cette fonction est appelée à chaque clic sur un radio button
     onOptionChange(event: Event) {
         const input = event.target as HTMLInputElement;
         const value = input.value;
@@ -36,14 +45,13 @@ export class FiltreComponent {
                 },
                 (error) => {
                     console.error("Erreur de géolocalisation", error);
-                    this.onFiltreChange.emit(value); // On envoie au moins la valeur simple
+                    this.onFiltreChange.emit(value); 
                 }
             );
         } else {
             this.onFiltreChange.emit(value);
         }
         
-        this.isMenuActive.set(false); 
     }
 
     updateMin(event: Event) {

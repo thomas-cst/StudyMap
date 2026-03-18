@@ -126,6 +126,16 @@ export class ResultatsComponent implements OnChanges, OnInit {
       list = list.filter(v => v.nom.toLowerCase().includes(q));
     }
 
+    // Filtre "Bord de mer"
+    if (currentFiltre === 'mer') {
+      return list.filter(v => this.villesService.isVilleMer(v.nom));
+    }
+ 
+    // Filtre "Montagne"
+    if (currentFiltre === 'montagne') {
+      return list.filter(v => this.villesService.isVilleMontagne(v.nom));
+    }
+
     // Filtre "Autour de moi" 
    if (currentFiltre.startsWith('geo:')) {
       const [lat, lng] = currentFiltre.replace('geo:', '').split(',').map(Number);
