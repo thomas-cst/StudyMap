@@ -195,11 +195,11 @@ export class CompteComponent implements OnInit {
   onGoogleLogin() {
     this.isLoading = true;
     this.clearMessages();
-    sessionStorage.setItem('googleLoginPending', 'true'); // 👈 AJOUT
+    sessionStorage.setItem('oauthLoginPending', 'true');
     this.authService.loginWithGoogle().then(({ error }) => {
       this.isLoading = false;
       if (error) {
-        sessionStorage.removeItem('googleLoginPending'); // 👈 AJOUT (en cas d'erreur)
+        sessionStorage.removeItem('oauthLoginPending');
         this.errorMessage = error.message || 'Erreur lors de la connexion Google';
       }
     });

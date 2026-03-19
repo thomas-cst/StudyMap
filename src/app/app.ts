@@ -44,8 +44,8 @@ export class App implements OnInit {
 
   ngOnInit() {
     this.authService.currentUser$.subscribe(user => {
-      if (user && sessionStorage.getItem('googleLoginPending')) {
-        sessionStorage.removeItem('googleLoginPending');
+      if (user && sessionStorage.getItem('oauthLoginPending')) {
+        sessionStorage.removeItem('oauthLoginPending');
         this.showCompte.set(true);
       }
     });
