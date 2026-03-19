@@ -53,8 +53,10 @@ export class App implements OnInit {
     this.showCompte.set(false);
   }
   
+  /** Onglet actuellement affiché (accueil, favoris ou classement) */
   protected readonly componentActif = signal<'accueil' | 'favoris' | 'classement'>('accueil');
 
+  /** Bascule entre le thème clair et sombre */
   protected onThemeToggle() {
     if (typeof document === 'undefined') return;
 

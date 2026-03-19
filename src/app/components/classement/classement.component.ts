@@ -1,3 +1,4 @@
+/** Composant Classement - Affiche le classement des villes avec recherche et filtres */
 import { Component, signal, inject, effect } from '@angular/core';
 import { SearchBarComponent } from '../searchBar/searchBar.component';
 import { ResultatsComponent } from '../resultats/resultats.component';
