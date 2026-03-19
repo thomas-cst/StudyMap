@@ -81,7 +81,7 @@ export class FavorisService {
       });
   }
 
-  /** Ajoute une ville aux favoris via l'API puis recharge la liste */
+  /** Ajoute une ville aux favoris - mise a jour optimiste pour affichage instantane */
   addFavoris(ville: Ville) {
     const email = this.getUserEmail();
     if (!email) {
@@ -89,16 +89,25 @@ export class FavorisService {
       return;
     }
 
+    // Mise a jour optimiste : ajouter immediatement au signal
+    // L'objet ville contient deja toutes les donnees (nom, imageUrl, lat, lng...)
+    // donc l'image est deja en cache navigateur, pas de rechargement
+    if (!this.isFavoris(ville.nom)) {
+      this.favorisSignal.set([...this.favorisSignal(), ville]);
+    }
+
     this.http.post('/api/favorites/add', {
       email: email,
       nom_ville: ville.nom
     }).subscribe({
-      next: (response: any) => {
+      next: () => {
         console.log('Favori ajoute:', ville.nom);
-        // Recharger la liste complete des favoris
-        this.loadFavoris();
       },
-      error: (err) => console.error('Erreur ajout favori:', err)
+      error: (err) => {
+        console.error('Erreur ajout favori:', err);
+        // En cas d'erreur, retirer le favori ajoute localement (rollback)
+        this.favorisSignal.set(this.favorisSignal().filter(v => v.nom !== ville.nom));
+      }
     });
   }
 
