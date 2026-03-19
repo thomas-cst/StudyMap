@@ -16,6 +16,8 @@ import { FavorisService } from '../../services/favoris.service';
 import { VillesService, Ville } from '../../services/villes.service';
 import { MapSyncService } from '../../services/map-sync.service';
 import { SearchSyncService } from '../../services/search-sync.service';
+import { AuthService } from '../../services/auth.service';
+import { AuthPopupService } from '../../services/auth-popup.service';
 
 /**
  * Composant résultats - Grille des villes avec filtrage, favoris et zoom carte
@@ -45,6 +47,10 @@ export class ResultatsComponent implements OnChanges, OnInit {
   private mapSyncService = inject(MapSyncService);
   /** Service de synchronisation de la barre de recherche */
   private searchSyncService = inject(SearchSyncService);
+  /** Service d'authentification pour verifier la connexion */
+  private authService = inject(AuthService);
+  /** Service pour demander l'ouverture de la popup de connexion */
+  private authPopupService = inject(AuthPopupService);
   /** Reference de destruction pour nettoyer les subscriptions RxJS */
   private destroyRef = inject(DestroyRef);
 
@@ -193,8 +199,12 @@ export class ResultatsComponent implements OnChanges, OnInit {
     return this.villes().filter(v => this.favorisService.isFavoris(v.nom));
   });
 
-  /** Ajoute ou retire une ville des favoris */
+  /** Ajoute ou retire une ville des favoris (ouvre la popup login si non connecte) */
   toggleFavoris(ville: Ville) {
+    if (!this.authService.isAuthenticated()) {
+      this.authPopupService.requestLogin();
+      return;
+    }
     this.favorisService.toggleFavoris(ville);
   }
 

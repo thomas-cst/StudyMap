@@ -25,6 +25,10 @@ app.use(express.json());
 const villesRoutes = require('./routes/villes');
 app.use('/api', villesRoutes);
 
+// Routes favoris
+const favorisRoutes = require('./routes/favoris');
+app.use('/api', favorisRoutes);
+
 // ====================================================
 // HEALTH CHECK
 // ====================================================
@@ -66,6 +70,9 @@ Available routes:
   GET  /api/villes/:id         - Détail d'une ville
   GET  /api/villes/search/:nom - Cherche une ville (BD→API)
   POST /api/villes/sync        - Synchronise les villes
+  GET  /api/favorites/:email  - Favoris d'un utilisateur
+  POST /api/favorites/add      - Ajouter un favori
+  DEL  /api/favorites/remove/:email/:nomVille - Supprimer un favori
 
 Quick start:
   1. POST /api/villes/sync      - Initialiser les villes

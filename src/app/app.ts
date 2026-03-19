@@ -1,4 +1,4 @@
-import { Component, signal, OnInit, inject } from '@angular/core'; 
+import { Component, signal, OnInit, inject, effect } from '@angular/core'; 
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { MapComponent } from './components/map/map.component';
@@ -7,6 +7,7 @@ import { CompteComponent } from './components/compte/compte.component';
 import { FavorisComponent } from './components/favoris/favoris.component';
 import { ClassementComponent } from './components/classement/classement.component';
 import { AuthService } from './services/auth.service';
+import { AuthPopupService } from './services/auth-popup.service';
 
 /**
  * Composant racine de l'application StudyMap
@@ -39,8 +40,22 @@ export class App implements OnInit {
 
   private authService = inject(AuthService);
 
+  /** Service permettant aux composants enfants de demander l'ouverture de la popup login */
+  private authPopupService = inject(AuthPopupService);
+
   /** Affichage de la popup login */
   protected showCompte = signal(false);
+
+  constructor() {
+    // Ecouter les demandes d'ouverture de la popup de connexion
+    // depuis les composants enfants (ex: clic sur coeur sans etre connecte)
+    effect(() => {
+      if (this.authPopupService.loginRequested()) {
+        this.showCompte.set(true);
+        this.authPopupService.dismiss();
+      }
+    });
+  }
 
   ngOnInit() {
   }
