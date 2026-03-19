@@ -21,8 +21,6 @@
 .ville-card {
     width: 100%;
     height: 250px;
-    background-size: cover;
-    background-position: center;
     border-radius: 12px;
     display: flex;
     align-items: flex-end;
@@ -32,12 +30,21 @@
     position: relative;
 }
 
-/* Carte agrandie : occupe 2 colonnes et plus de hauteur */
+/* Image de fond lazy-loaded */
+.ville-card-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+}
+
+/* Carte agrandie */
 .ville-card.expanded {
     grid-column: span 2;
     height: 500px;
-    background-size: cover;
-    background-attachment: fixed;
 }
 
 .ville-card::before {

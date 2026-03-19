@@ -56,3 +56,189 @@
     font-size: 24px;
     cursor: pointer;
 }
+
+.signup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.signup-form h4 {
+    margin: 0;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.login-form h4 {
+    margin: 0;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    text-align: left;
+}
+
+.form-group label {
+    font-weight: bold;
+}
+
+.form-group input {
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.message {
+    padding: 12px;
+    border-radius: 5px;
+    margin: 10px 0;
+    font-weight: bold;
+    text-align: center;
+}
+
+.success-message {
+    background-color: #4caf50;
+    color: white;
+}
+
+.error-message {
+    background-color: #f44336;
+    color: white;
+}
+
+.error {
+    color: #ffcccc;
+    font-size: 12px;
+}
+
+.btn-submit, .btn-cancel, .btn-logout {
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-submit {
+    background-color: white;
+    color: var(--bg-dark-blue);
+}
+
+.btn-submit:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-cancel {
+    background-color: transparent;
+    border: 1px solid white;
+    color: white;
+}
+
+.btn-logout {
+    background-color: #f44336;
+    color: white;
+    padding: 12px;
+    width: 100%;
+}
+
+.btn-logout:hover {
+    background-color: #da190b;
+}
+
+.connected-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.connected-content p {
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.error {
+    color: red;
+    font-size: 12px;
+}
+
+.btn-submit, .btn-cancel {
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-submit {
+    background-color: white;
+    color: var(--bg-dark-blue);
+}
+
+.btn-submit:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-cancel {
+    background-color: transparent;
+    border: 1px solid white;
+    color: white;
+}
+.btn-google {
+    background-color: white;
+    color: #1f2937;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.btn-google:hover {
+    background-color: #f0f0f0;
+}
+
+.btn-google:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    color: #999;
+}
+
+.divider {
+    text-align: center;
+    color: white;
+    font-size: 12px;
+    opacity: 0.8;
+    margin: 5px 0;
+}

@@ -1,7 +1,9 @@
-import { Component, signal } from '@angular/core';
+/** Composant Classement - Affiche le classement des villes avec recherche et filtres */
+import { Component, signal, inject, effect } from '@angular/core';
 import { SearchBarComponent } from '../searchBar/searchBar.component';
 import { ResultatsComponent } from '../resultats/resultats.component';
 import { FiltreComponent } from '../filtre/filtre.component';
+import { SearchSyncService } from '../../services/search-sync.service';
 
 @Component({
   selector: 'app-classement', 
@@ -13,6 +15,19 @@ import { FiltreComponent } from '../filtre/filtre.component';
 export class ClassementComponent {
   /** terme actuellement recherché */
   searchTerm = signal('');
+
+  private searchSyncService = inject(SearchSyncService);
+
+  constructor() {
+    // Écouter les demandes de vider la recherche
+    effect(() => {
+      const clearTimestamp = this.searchSyncService.clearSearchRequested();
+      // Si le timestamp est > 0, cela signifie qu'on a reçu une demande de vider
+      if (clearTimestamp > 0) {
+        this.searchTerm.set('');
+      }
+    });
+  }
 
   onSearch(city: string) {
     this.searchTerm.set(city);

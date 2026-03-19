@@ -13,16 +13,17 @@ export class MapSyncService {
   // Signal pour synchroniser le zoom entre les composants
   zoomTarget = signal<ZoomTarget | null>(null);
 
-  // Signal pour tracker les villes récemment consultées
+  // Signal pour tracker les codes INSEE des villes récemment consultées
+  // (on utilise les codes au lieu des noms pour être robuste aux variations de noms)
   recentlyViewed = signal<string[]>([]);
 
   /**
-   * Ajoute une ville aux récemment consultées (sans zoom)
+   * Ajoute un code INSEE aux récemment consultées (sans zoom)
    */
-  addToRecentlyViewed(ville: string) {
+  addToRecentlyViewed(codeInsee: string) {
     const current = this.recentlyViewed();
-    const filtered = current.filter(v => v !== ville);
-    this.recentlyViewed.set([ville, ...filtered.slice(0, 9)]);
+    const filtered = current.filter(v => v !== codeInsee);
+    this.recentlyViewed.set([codeInsee, ...filtered.slice(0, 9)]);
   }
 
   /**
@@ -35,8 +36,5 @@ export class MapSyncService {
       lat,
       lng
     });
-
-    // Ajouter la ville aux récemment consultées
-    this.addToRecentlyViewed(ville);
   }
 }

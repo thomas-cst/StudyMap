@@ -1,38 +1,29 @@
+/**
+ * Service VillesService
+ * Récupère les villes depuis le backend /api/villes (Supabase)
+ * Cache en mémoire + localStorage pour éviter les requêtes inutiles
+ */
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, forkJoin, of, switchMap, catchError, concatMap, first, tap, delay } from 'rxjs';
+import { Observable, map, of, catchError, tap } from 'rxjs';
 
 export interface Ville {
+  id_ville?: number;
   nom: string;
-  imageUrl: string;
+  code: string;        // Code INSEE
+  imageUrl: string;    // URL image Wikipedia
   lat?: number;
   lng?: number;
 }
 
-interface ApiEtablissement {
-  uo_lib: string;
-  com_nom: string;
-  com_code?: string;
-  uai_cd?: string;
-  localisation?: {
-    type: string;
-    coordinates?: [number, number];
-  };
-}
-
-interface NominatimResult {
-  lat: string;
-  lon: string;
-}
-
-interface WikipediaSummary {
-  thumbnail?: {
-    source: string;
-  };
-  coordinates?: {
-    lat: number;
-    lon: number;
-  };
+/** Format Open-Meteo Geocoding */
+interface OpenMeteoGeocodingResult {
+  latitude: number;
+  longitude: number;
+  name: string;
+  admin1: string;
+  country: string;
 }
 
 @Injectable({
@@ -67,10 +58,21 @@ export class VillesService {
   // Cache des coordonnées (vide au départ, se remplit via Wikidata)
   private coordinatesCache: { [key: string]: { lat: number; lng: number } } = {};
 
-  private cacheKey = 'villes_cache';
-  private villesCache: Ville[] | null = null;
+  // Corrections manuelles depuis assets/city-coordinates-fixes.json
+  private coordinatesFixes: { [key: string]: { lat: number; lng: number } } = {};
 
-  constructor(private http: HttpClient) { }
+  private cacheKey = 'villes_cache_v2';
+  private villesCache: Ville[] | null = null;
+  private openMeteoBaseUrl = 'https://geocoding-api.open-meteo.com/v1/search';
+
+  constructor(private http: HttpClient) {
+    this.loadCoordinatesFixes();
+  }
+
+  /** Charge les corrections manuelles de coordonnées */
+  private loadCoordinatesFixes(): void {
+    // TODO: Charger depuis assets/city-coordinates-fixes.json si nécessaire
+  }
 
 
   //Vérifie si une ville est en bord de mer
@@ -92,7 +94,7 @@ export class VillesService {
       return of(this.villesCache);
     }
 
-    // Vérifie si on est côté navigateur
+    // Vérifie si on est côté navigateur et essayer localStorage
     if (typeof window !== 'undefined' && window.localStorage) {
       const cached = localStorage.getItem(this.cacheKey);
       if (cached) {
@@ -101,145 +103,80 @@ export class VillesService {
       }
     }
 
-    return this.loadVillesFromAPI().pipe(
+    // Backend /api/villes
+    return this.loadVillesFromBackend().pipe(
       tap(villes => {
         this.villesCache = villes;
-        // Enregistre le cache uniquement côté navigateur
         if (typeof window !== 'undefined' && window.localStorage) {
           localStorage.setItem(this.cacheKey, JSON.stringify(villes));
         }
-      })
-    );
-  }
-
-  private loadVillesFromAPI(): Observable<Ville[]> {
-    const url = 'https://data.enseignementsup-recherche.gouv.fr/api/explore/v2.1/catalog/datasets/fr-esr-principaux-etablissements-enseignement-superieur/records?where=type_d_etablissement%3D%22Universit%C3%A9%22&limit=100';
-
-    return this.http.get<{ results: ApiEtablissement[] }>(url).pipe(
-      switchMap(response => {
-        // Extraire les villes uniques nettoyées et filtrées
-        const villesUniques = new Set<string>();
-        response.results.forEach(etab => {
-          if (etab.com_nom) {
-            const cleaned = etab.com_nom.replace(/\s+\d+(er|e|ème)?$/i, '').trim();
-            if (!this.villesOutreMer.has(cleaned)) {
-              villesUniques.add(cleaned);
-            }
-          }
-        });
-
-        // Récupérer juste les images (pas les coordonnées au chargement)
-        const villesObservables = Array.from(villesUniques).map(ville =>
-          this.getImageVille(ville).pipe(
-            map(imageUrl => ({ 
-              nom: ville, 
-              imageUrl
-            }))
-          )
-        );
-
-        return forkJoin(villesObservables);
-      })
-    ).pipe(
-      // Filtrer les villes sans image
-      map(villes => villes.filter((v: Ville) => v.imageUrl))
-    );
-  }
-
-  /**
-   * Récupère les coordonnées d'une ville spécifique (appelé au click)
-   */
-  getCoordinatesForVille(nomVille: string): Observable<{ lat: number; lng: number }> {
-    // Vérifier le cache d'abord
-    if (this.coordinatesCache[nomVille]) {
-      console.log(`✅ Coordonnées en cache pour ${nomVille}`);
-      return of(this.coordinatesCache[nomVille]);
-    }
-    
-    // Utiliser l'API Wikidata pour récupérer les coordonnées
-    console.log(`🔍 Récupération coordonnées Wikidata pour ${nomVille}...`);
-    const url = `https://www.wikidata.org/w/api.php`;
-    const params = {
-      action: 'wbsearchentities',
-      search: nomVille,
-      language: 'fr',
-      type: 'item',
-      format: 'json',
-      origin: '*'
-    };
-
-    return this.http.get<any>(url, { params }).pipe(
-      switchMap(results => {
-        if (results.search && results.search.length > 0) {
-          // Récupérer les claims de l'entité pour obtenir les coordonnées
-          const entityId = results.search[0].id;
-          return this.http.get<any>(`https://www.wikidata.org/wiki/Special:EntityData/${entityId}.json`, {
-            params: { origin: '*' }
-          });
-        }
-        return of(null);
       }),
-      map(entityData => {
+      catchError(() => {
+        console.warn('WARNING: Backend indisponible');
+        return of([]);
+      })
+    );
+  }
+
+  /** Mapping backend → interface Ville */
+  private loadVillesFromBackend(): Observable<Ville[]> {
+    return this.http.get<any[]>('/api/villes').pipe(
+      map(villes => villes.map(v => ({
+        nom: v.nom_ville,
+        code: v.code_insee,
+        imageUrl: this.toThumbnail(v.url_image),
+        lat: v.latitude,
+        lng: v.longitude
+      })))
+    );
+  }
+
+  /** Convertit une URL Wikimedia originale en thumbnail 600px */
+  private toThumbnail(url: string | null): string {
+    if (!url) return '';
+    // Déjà un thumbnail
+    if (url.includes('/thumb/')) return url;
+    // Transformer: /commons/a/ab/File.jpg → /commons/thumb/a/ab/File.jpg/600px-File.jpg
+    const match = url.match(/\/wikipedia\/commons\/([a-f0-9]\/[a-f0-9]{2}\/(.+))$/);
+    if (match) {
+      return url.replace(`/commons/${match[1]}`, `/commons/thumb/${match[1]}/600px-${match[2]}`);
+    }
+    return url;
+  }
+
+  /** Coordonnées d'une ville (cache > corrections > Open-Meteo) */
+  getCoordinatesForVille(nomVille: string, codeInsee?: string): Observable<{ lat: number; lng: number }> {
+    if (codeInsee) {
+      if (this.coordinatesCache[codeInsee]) {
+        return of(this.coordinatesCache[codeInsee]);
+      }
+      if (this.coordinatesFixes[codeInsee]) {
+        const coords = this.coordinatesFixes[codeInsee];
+        this.coordinatesCache[codeInsee] = coords;
+        return of(coords);
+      }
+    }
+
+    // Fallback: Open-Meteo Geocoding
+    const params = { name: nomVille, country: 'France', language: 'fr', limit: '1' };
+
+    return this.http.get<{ results: OpenMeteoGeocodingResult[] }>(this.openMeteoBaseUrl, { params }).pipe(
+      map(response => {
         let coords: { lat: number; lng: number };
-        
-        if (entityData && entityData.entities) {
-          const entity = Object.values(entityData.entities)[0] as any;
-          const coordClaim = entity.claims?.P625?.[0];
-          
-          if (coordClaim?.mainsnak?.datavalue?.value) {
-            const value = coordClaim.mainsnak.datavalue.value;
-            coords = {
-              lat: parseFloat(value.latitude),
-              lng: parseFloat(value.longitude)
-            };
-            console.log(`✅ Coordonnées Wikidata trouvées pour ${nomVille}:`, coords);
-          } else {
-            coords = { lat: 46.5, lng: 2.2 };
-            console.warn(`⚠️ Pas de coordonnées géologiques dans Wikidata pour ${nomVille}`);
-          }
+        if (response.results?.length > 0) {
+          const r = response.results[0];
+          coords = { lat: r.latitude, lng: r.longitude };
         } else {
-          coords = { lat: 46.5, lng: 2.2 };
-          console.warn(`⚠️ Aucune entité Wikidata trouvée pour ${nomVille}`);
+          coords = { lat: 46.5, lng: 2.2 }; // Centre France par défaut
         }
-        
-        // Mettre en cache
-        this.coordinatesCache[nomVille] = coords;
+        this.coordinatesCache[codeInsee || nomVille] = coords;
         return coords;
       }),
-      catchError(error => {
-        console.warn(`⚠️ Erreur Wikidata pour ${nomVille}, utilisation du fallback:`, error);
+      catchError(() => {
         const fallback = { lat: 46.5, lng: 2.2 };
-        this.coordinatesCache[nomVille] = fallback;
+        this.coordinatesCache[codeInsee || nomVille] = fallback;
         return of(fallback);
       })
-    );
-  }
-
-  /**
-   * Récupère l'image d'une ville via Wikipedia
-   */
-  private getImageVille(nomVille: string): Observable<string> {
-    // Essayer plusieurs variantes
-    const variantes = [
-      nomVille,
-      `${nomVille} (France)`,
-      `${nomVille} (ville)`
-    ];
-
-    // Essayer chaque variante jusqu'à en trouver une avec thumbnail
-    return of(...variantes).pipe(
-      concatMap(variante => this.tryGetImage(variante)),
-      first(image => image !== '', '') // Prendre la première non vide, ou '' si aucune
-    );
-  }
-
-  private tryGetImage(nom: string): Observable<string> {
-    const encodedVille = encodeURIComponent(nom);
-    const url = `https://fr.wikipedia.org/api/rest_v1/page/summary/${encodedVille}`;
-
-    return this.http.get<WikipediaSummary>(url).pipe(
-      map(summary => summary.thumbnail?.source || ''),
-      catchError(() => of(''))
     );
   }
 }

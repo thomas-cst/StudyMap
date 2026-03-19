@@ -4,7 +4,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FavorisService } from '../../services/favoris.service';
 import { VillesService, Ville } from '../../services/villes.service';
 import { MapSyncService } from '../../services/map-sync.service';
+import { SearchSyncService } from '../../services/search-sync.service';
 
+/**
+ * Composant résultats - Grille des villes avec filtrage, favoris et zoom carte
+ */
 @Component({
   selector: 'app-resultats', 
   standalone: true,        
@@ -13,42 +17,28 @@ import { MapSyncService } from '../../services/map-sync.service';
   styleUrl: './resultats.component.scss'
 })
 export class ResultatsComponent implements OnChanges, OnInit {
-  /** nom de la ville recherchée */
   @Input() query = '';
 
-  /** signal local pour tracker la query */
   private querySignal = signal('');
 
   filtreActuel = input<string>('');
 
   /** inject le service favoris */
   private favorisService = inject(FavorisService);
-
-  /** inject le service villes */
   private villesService = inject(VillesService);
-
-  /** inject le service de sync map */
   private mapSyncService = inject(MapSyncService);
-
-  /** destroy ref pour nettoyer les subscriptions */
+  private searchSyncService = inject(SearchSyncService);
   private destroyRef = inject(DestroyRef);
 
-  /** données des villes chargées dynamiquement */
   private villes = signal<Ville[]>([]);
-
-  /** loading state */
   isLoading = signal(true);
-
-  /** expose le service pour les tests */
   get favoris() {
     return this.favorisService.favoris;
   }
 
-  /** ville agrandie dans la grille */
   expandedVille = signal<Ville | null>(null);
-
-  /** track la dernière ville zoomée pour éviter les appels API dupliqués */
   private lastZoomedVille = signal<string | null>(null);
+  private isManualSelection = signal<boolean>(false);
 
   ngOnInit() {
     this.loadVilles();
@@ -75,43 +65,47 @@ export class ResultatsComponent implements OnChanges, OnInit {
 
       },
       error: (err) => {
-        console.error('Erreur lors du chargement des villes:', err);
+        console.error('ERROR: Chargement des villes échoué:', err);
         this.isLoading.set(false);
-        // Fallback to some default villes if API fails
-        this.villes.set([
-          { nom: 'Paris', imageUrl: 'https://www.okvoyage.com/wp-content/uploads/2023/10/Paris-en-photos-scaled.jpg',lat: 48.8566, lng: 2.3522 },
-          { nom: 'Lyon', imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTim-y5IcrE4tmZFz2wzjL6jHqjTX5ZjsxrDw&s',lat: 45.7640, lng: 4.8357 }
-        ]);
+        this.villes.set([]);
       }
     });
   }
 
-  /** auto-expand celle qui match la recherche */
   constructor() {
+    // Auto-expand la ville qui match la recherche
     effect(() => {
       const q = this.querySignal().trim().toLowerCase();
-      if (!q) {
+      const isManual = this.isManualSelection();
+      
+      // Si requête est vide et pas de sélection manuelle, fermer
+      if (!q && !isManual) {
         this.expandedVille.set(null);
-      } else {
+        return;
+      }
+      
+      // Si sélection manuelle ET la query change (changement de recherche), ignorer la recherche
+      if (isManual && q) {
+        return; // Garder la sélection manuelle, ignorer la recherche
+      }
+      
+      // Logique de recherche (seulement si pas de sélection manuelle)
+      if (!isManual && q) {
         const matching = this.villes().find(v => v.nom.toLowerCase().includes(q));
-        if (matching) {
-          // Si la ville trouvée est DIFFÉRENTE de la dernière zoomée, on zoom
-          if (this.lastZoomedVille() !== matching.nom) {
-            this.expandedVille.set(matching);
-            this.lastZoomedVille.set(matching.nom);
-            this.expandAndZoom(matching);
-          }
-        } else {
-          this.expandedVille.set(null);
+        if (matching && matching.code !== this.expandedVille()?.code) {
+          this.expandedVille.set(matching);
+          this.lastZoomedVille.set(matching.code);
+          this.expandAndZoom(matching);
         }
       }
     });
   }
 
-  /** sync les changements d'Input avec le signal local */
+  /** Sync Input query avec le signal local */
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['query']) {
       this.querySignal.set(this.query);
+      this.isManualSelection.set(false);
     }
   }
 
@@ -168,14 +162,14 @@ export class ResultatsComponent implements OnChanges, OnInit {
     return list;
   });
 
-  /** villes uniquement dans les favoris */
+  /** Villes en favoris uniquement */
   favorisFiltered = computed(() => {
     return this.villes().filter(v => this.favorisService.isFavoris(v.nom));
   });
 
   /** toggle une ville en favoris */
-  toggleFavoris(nom: string) {
-    this.favorisService.toggleFavoris(nom);
+  toggleFavoris(ville: Ville) {
+    this.favorisService.toggleFavoris(ville);
   }
 
   /** check si une ville est en favoris */
@@ -188,18 +182,22 @@ export class ResultatsComponent implements OnChanges, OnInit {
     return encodeURIComponent(str);
   }
 
-  /** Méthode commune pour expand + zoom */
+  /** Expand + zoom sur la carte */
   private expandAndZoom(ville: Ville) {
-    // Ajouter aux récemment consultées
-    this.mapSyncService.addToRecentlyViewed(ville.nom);
+    setTimeout(() => {
+      const el = document.querySelector('.resultats');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
     
-    // Si les coordonnées sont en cache, zoomer directement
+    // Ajouter aux récemment consultées
+    this.mapSyncService.addToRecentlyViewed(ville.code);
+    
     if (ville.lat !== undefined && ville.lng !== undefined) {
       this.mapSyncService.zoomToVille(ville.nom, ville.lat, ville.lng);
     } else {
-      // Sinon, récupérer les coordonnées
-      console.log(`📍 Récupération coordonnées pour ${ville.nom}`);
-      this.villesService.getCoordinatesForVille(ville.nom)
+      // Fallback: récupérer via Open-Meteo
+      this.villesService.getCoordinatesForVille(ville.nom, ville.code)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(coords => {
           console.log(`🗺️ Zoom vers ${ville.nom}:`, coords);
@@ -213,18 +211,25 @@ export class ResultatsComponent implements OnChanges, OnInit {
 
   /** toggle l'expansion d'une ville */
   toggleExpanded(ville: Ville) {
-    if (this.expandedVille()?.nom === ville.nom) {
+    if (this.expandedVille()?.code === ville.code) {
+      // Fermer la ville
       this.expandedVille.set(null);
+      this.isManualSelection.set(false);
+      this.querySignal.set(''); // Vider le signal local
+      this.searchSyncService.clearSearch(); // Demander au parent de vider l'input
     } else {
+      // Ouvrir une nouvelle ville
       this.expandedVille.set(ville);
-      this.lastZoomedVille.set(ville.nom);
+      this.lastZoomedVille.set(ville.code);
+      this.isManualSelection.set(true); // Blocker la recherche d'override la sélection
+      this.querySignal.set(''); // Vider le buffer recherche
       this.expandAndZoom(ville);
     }
   }
 
   /** check si une ville est agrandie */
   isExpanded(ville: Ville): boolean {
-    return this.expandedVille()?.nom === ville.nom;
+    return this.expandedVille()?.code === ville.code;
   }
 
   // calcule la distance entre deux coordonnées

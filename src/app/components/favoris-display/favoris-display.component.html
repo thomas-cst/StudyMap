@@ -1,13 +1,13 @@
 <div class="resultats">
   <!-- Loading state -->
-  <div *ngIf="isLoading()" class="loading">
-    <p>Chargement des favoris...</p>
+  <div *ngIf="villes().length === 0" class="loading">
+    <p>Aucun favori pour le moment</p>
   </div>
 
   <!-- Grille de favoris -->
-  <ng-container *ngIf="!isLoading() && filtered().length; else empty">
+  <ng-container *ngIf="villes().length > 0; else empty">
     <div class="ville-card" 
-         *ngFor="let v of filtered()" 
+         *ngFor="let v of villes()" 
          [style.backgroundImage]="'url(' + (v.imageUrl || 'https://via.placeholder.com/400x300/cccccc/000000?text=' + encodeURIComponent(v.nom)) + ')'"
          [class.expanded]="isExpanded(v)">
       
@@ -16,7 +16,7 @@
         <!-- Icône coeur en haut à droite -->
         <button class="btn-favoris" 
                 [class.active]="isFavoris(v.nom)"
-                (click)="toggleFavoris(v.nom)"
+                (click)="toggleFavoris(v)"
                 title="Retirer des favoris">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="heart-icon">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
