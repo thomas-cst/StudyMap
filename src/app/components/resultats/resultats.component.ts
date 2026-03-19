@@ -1,3 +1,14 @@
+/**
+ * Composant Resultats - Grille des villes avec filtrage, favoris et zoom carte
+ * 
+ * Fonctionnalites :
+ * - Chargement des villes depuis le backend
+ * - Filtrage par recherche textuelle, bord de mer, montagne, geolocalisation
+ * - Tri par villes recemment consultees
+ * - Expansion d'une carte ville pour voir les details et zoomer sur la carte
+ * - Gestion des favoris (ajout/suppression)
+ * - Calcul de distance (formule de Haversine) pour le tri par proximite
+ */
 import { Component, input,Input, computed, signal, inject, effect, OnChanges, SimpleChanges, OnInit, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -17,33 +28,48 @@ import { SearchSyncService } from '../../services/search-sync.service';
   styleUrl: './resultats.component.scss'
 })
 export class ResultatsComponent implements OnChanges, OnInit {
+  /** Terme de recherche recu depuis le composant parent */
   @Input() query = '';
 
+  /** Signal local pour suivre la query de maniere reactive */
   private querySignal = signal('');
 
+  /** Filtre actuellement selectionne (recu du parent via input) */
   filtreActuel = input<string>('');
 
-  /** inject le service favoris */
+  /** Service de gestion des favoris */
   private favorisService = inject(FavorisService);
+  /** Service pour recuperer les villes et leurs coordonnees */
   private villesService = inject(VillesService);
+  /** Service de synchronisation avec la carte (zoom, villes recentes) */
   private mapSyncService = inject(MapSyncService);
+  /** Service de synchronisation de la barre de recherche */
   private searchSyncService = inject(SearchSyncService);
+  /** Reference de destruction pour nettoyer les subscriptions RxJS */
   private destroyRef = inject(DestroyRef);
 
+  /** Liste de toutes les villes chargees depuis le backend */
   private villes = signal<Ville[]>([]);
+  /** Indicateur de chargement des villes */
   isLoading = signal(true);
+  /** Acces en lecture seule aux favoris du service */
   get favoris() {
     return this.favorisService.favoris;
   }
 
+  /** Ville actuellement agrandie dans la grille */
   expandedVille = signal<Ville | null>(null);
+  /** Derniere ville zoomee pour eviter les appels API dupliques */
   private lastZoomedVille = signal<string | null>(null);
+  /** Indique si la selection est manuelle (clic) ou automatique (recherche) */
   private isManualSelection = signal<boolean>(false);
 
+  /** Charge les villes depuis le backend au demarrage */
   ngOnInit() {
     this.loadVilles();
   }
 
+  /** Recupere les villes via le service et met en cache les coordonnees manquantes */
   private loadVilles() {
     this.isLoading.set(true);
     this.villesService.getVilles().subscribe({
@@ -101,7 +127,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
     });
   }
 
-  /** Sync Input query avec le signal local */
+  /** Synchronise le changement d'Input query avec le signal local */
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['query']) {
       this.querySignal.set(this.query);
@@ -109,7 +135,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
     }
   }
 
-  /** affiche TOUTES les villes */
+  /** Liste filtree et triee des villes selon la recherche et les filtres actifs */
  filtered = computed(() => {
     let list = [...this.villes()];
     const currentFiltre = this.filtreActuel();
@@ -162,27 +188,27 @@ export class ResultatsComponent implements OnChanges, OnInit {
     return list;
   });
 
-  /** Villes en favoris uniquement */
+  /** Liste des villes qui sont en favoris */
   favorisFiltered = computed(() => {
     return this.villes().filter(v => this.favorisService.isFavoris(v.nom));
   });
 
-  /** toggle une ville en favoris */
+  /** Ajoute ou retire une ville des favoris */
   toggleFavoris(ville: Ville) {
     this.favorisService.toggleFavoris(ville);
   }
 
-  /** check si une ville est en favoris */
+  /** Verifie si une ville est dans la liste des favoris */
   isFavoris(nom: string): boolean {
     return this.favorisService.isFavoris(nom);
   }
 
-  /** encode URI pour les URLs */
+  /** Encode une chaine pour utilisation dans les URLs */
   encodeURIComponent(str: string): string {
     return encodeURIComponent(str);
   }
 
-  /** Expand + zoom sur la carte */
+  /** Agrandit la carte ville, scrolle vers le haut et zoome sur la carte Leaflet */
   private expandAndZoom(ville: Ville) {
     setTimeout(() => {
       const el = document.querySelector('.resultats');
@@ -209,7 +235,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
     }
   }
 
-  /** toggle l'expansion d'une ville */
+  /** Ouvre ou ferme les details d'une ville dans la grille */
   toggleExpanded(ville: Ville) {
     if (this.expandedVille()?.code === ville.code) {
       // Fermer la ville
@@ -227,12 +253,12 @@ export class ResultatsComponent implements OnChanges, OnInit {
     }
   }
 
-  /** check si une ville est agrandie */
+  /** Verifie si une ville est actuellement agrandie */
   isExpanded(ville: Ville): boolean {
     return this.expandedVille()?.code === ville.code;
   }
 
-  // calcule la distance entre deux coordonnées
+  /** Calcule la distance en km entre deux coordonnees GPS (formule de Haversine) */
   private getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
       const R = 6371; // Rayon de la terre
       const dLat = (lat2 - lat1) * Math.PI / 180;

@@ -1,7 +1,17 @@
+/**
+ * Composant Map - Affiche la carte interactive Leaflet
+ * 
+ * Fonctionnalites :
+ * - Initialisation de la carte Leaflet avec tuiles cartographiques
+ * - Synchronisation du zoom avec les autres composants via MapSyncService
+ * - Changement automatique de theme (clair/sombre) selon le mode choisi
+ * - Utilisation de signaux Angular pour reagir aux changements
+ */
 import { Component, AfterViewInit, OnDestroy, ViewChild, ElementRef, Inject, PLATFORM_ID, signal, effect, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { MapSyncService } from '../../services/map-sync.service';
 
+/** Declaration de la variable globale Leaflet (chargee via CDN dans index.html) */
 declare const L: any;
 
 /**
@@ -22,14 +32,19 @@ declare const L: any;
     standalone: true,
 })
 export class MapComponent implements AfterViewInit, OnDestroy {
+    /** Reference vers le conteneur HTML de la carte */
     @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef<HTMLDivElement>;
+    /** Instance de la carte Leaflet */
     private map: any;
+    /** Couche de tuiles actuelle (change selon le theme) */
 	private tileLayer: any;
+    /** Signal indiquant si le mode sombre est actif */
 	private isDarkMode = signal(false);
+    /** Service de synchronisation du zoom entre la carte et les autres composants */
 	private mapSyncService = inject(MapSyncService);
 
 	constructor(@Inject(PLATFORM_ID) private platformId: Object) {
-		// Réagir aux changements de thème (dark/light)
+		// Effet reactif : met a jour les tuiles quand le theme change
 		effect(() => {
 			if (this.isDarkMode() && this.tileLayer) {
 				this.updateTileLayer(true);
@@ -38,7 +53,7 @@ export class MapComponent implements AfterViewInit, OnDestroy {
 			}
 		});
 
-		// Réagir aux demandes de zoom vers une ville (doit être dans le constructeur)
+		// Effet reactif : zoome sur une ville quand le signal zoomTarget change
 		effect(() => {
 			const target = this.mapSyncService.zoomTarget();
 			if (target && this.map) {
@@ -59,6 +74,7 @@ export class MapComponent implements AfterViewInit, OnDestroy {
 		});
 	}
 
+    /** Initialise la carte apres le rendu de la vue (uniquement cote navigateur) */
     ngAfterViewInit(): void {
         if (isPlatformBrowser(this.platformId)) {
             this.initMap();
@@ -66,12 +82,14 @@ export class MapComponent implements AfterViewInit, OnDestroy {
         }
     }
 
+    /** Detruit la carte Leaflet pour liberer la memoire */
     ngOnDestroy(): void {
         if (this.map) {
             this.map.remove();
         }
     }
 
+    /** Cree la carte Leaflet centree sur la France et charge les tuiles selon le theme */
     private initMap() {
         this.map = L.map(this.mapContainer.nativeElement).setView([48.00611, 0.19955], 13);
 		
@@ -93,6 +111,7 @@ export class MapComponent implements AfterViewInit, OnDestroy {
 
 	}
 
+	/** Observe les changements de classe CSS sur le body pour detecter le changement de theme */
 	private observeThemeChanges() {
 		// Observer les changements de la classe dark-mode sur le body
 		const observer = new MutationObserver(() => {
@@ -106,6 +125,7 @@ export class MapComponent implements AfterViewInit, OnDestroy {
 		});
 	}
 
+	/** Remplace la couche de tuiles par celle correspondant au theme actuel */
 	private updateTileLayer(isDark: boolean) {
 		if (!this.map || !this.tileLayer) return;
 

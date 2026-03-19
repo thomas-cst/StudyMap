@@ -1,3 +1,9 @@
+/**
+ * Composant Favoris - Affiche les villes favorites de l'utilisateur
+ * 
+ * Contient une barre de recherche, des filtres et le composant FavorisDisplay
+ * Ecoute le service SearchSyncService pour vider la recherche quand necessaire
+ */
 import { Component, signal, inject, effect } from '@angular/core';
 import { SearchBarComponent } from '../searchBar/searchBar.component';
 import { FavorisDisplayComponent } from '../favoris-display/favoris-display.component';
@@ -12,9 +18,10 @@ import { SearchSyncService } from '../../services/search-sync.service';
   styleUrl: './favoris.component.scss'
 })
 export class FavorisComponent {
-  /** terme actuellement recherché */
+  /** Terme de recherche actuellement saisi par l'utilisateur */
   searchTerm = signal('');
 
+  /** Service de synchronisation de la barre de recherche entre composants */
   private searchSyncService = inject(SearchSyncService);
 
   constructor() {
@@ -28,15 +35,20 @@ export class FavorisComponent {
     });
   }
 
+  /** Met a jour le terme de recherche avec la ville saisie */
   onSearch(city: string) {
     this.searchTerm.set(city);
   }
 
+  /** Getter pour acceder a la valeur du signal dans le template */
   get query() {
     return this.searchTerm();
   }
+
+  /** Filtre actuellement selectionne */
   filtreActuel = signal('');
 
+  /** Met a jour le filtre selectionne */
   onFiltreChange(filtre: string) {
     this.filtreActuel.set(filtre);
   }

@@ -1,10 +1,11 @@
+<!-- Grille d'affichage des resultats de recherche -->
 <div class="resultats">
-  <!-- Loading state -->
+  <!-- Indicateur de chargement -->
   <div *ngIf="isLoading()" class="loading">
     <p>Chargement des villes...</p>
   </div>
 
-  <!-- Grille de résultats -->
+  <!-- Grille des cartes de villes -->
   <ng-container *ngIf="!isLoading() && filtered().length; else empty">
     <div class="ville-card" 
          *ngFor="let v of filtered()" 
@@ -17,7 +18,7 @@
            loading="lazy"
            class="ville-card-bg" />
       
-      <!-- Mode normal : afficher l'overlay et les boutons -->
+      <!-- Mode normal : carte avec image, bouton coeur et bouton details -->
       <ng-container *ngIf="!isExpanded(v)">
         <!-- Icône coeur en haut à droite -->
         <button class="btn-favoris" 
@@ -44,7 +45,7 @@
         </button>
       </ng-container>
 
-      <!-- Mode agrandis : afficher les détails complets -->
+      <!-- Mode agrandi : affiche les details complets de la ville -->
       <ng-container *ngIf="isExpanded(v)">
         <div class="expanded-content">
           <div class="expanded-header">

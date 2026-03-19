@@ -1,12 +1,17 @@
+<!-- En-tete avec le logo de l'application -->
 <header>
     <div class="logo">
         <img [src]="logoSrc()" alt="logo">
     </div>
 </header>
+
+<!-- Conteneur principal de l'application -->
 <div class="main-container">
     <div class="content">
+        <!-- Barre de menu laterale avec les icones de navigation -->
         <div class="barre-menu">
             <div class="menu-haut">
+                <!-- Bouton Accueil -->
                 <div id="accueil" [class.active]="componentActif() === 'accueil'" (click)="afficherAccueil()">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
@@ -14,12 +19,14 @@
                     </svg>
                 </div>
 
+                <!-- Bouton Classement -->
                 <div id="classement" [class.active]="componentActif() === 'classement'" (click)="afficherClassement()">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                         <path fill-rule="evenodd" d="M7.491 5.992a.75.75 0 0 1 .75-.75h12a.75.75 0 1 1 0 1.5h-12a.75.75 0 0 1-.75-.75ZM7.49 11.995a.75.75 0 0 1 .75-.75h12a.75.75 0 0 1 0 1.5h-12a.75.75 0 0 1-.75-.75ZM7.491 17.994a.75.75 0 0 1 .75-.75h12a.75.75 0 1 1 0 1.5h-12a.75.75 0 0 1-.75-.75ZM2.24 3.745a.75.75 0 0 1 .75-.75h1.125a.75.75 0 0 1 .75.75v3h.375a.75.75 0 0 1 0 1.5H2.99a.75.75 0 0 1 0-1.5h.375v-2.25H2.99a.75.75 0 0 1-.75-.75ZM2.79 10.602a.75.75 0 0 1 0-1.06 1.875 1.875 0 1 1 2.652 2.651l-.55.55h.35a.75.75 0 0 1 0 1.5h-2.16a.75.75 0 0 1-.53-1.281l1.83-1.83a.375.375 0 0 0-.53-.53.75.75 0 0 1-1.062 0ZM2.24 15.745a.75.75 0 0 1 .75-.75h1.125a1.875 1.875 0 0 1 1.501 2.999 1.875 1.875 0 0 1-1.501 3H2.99a.75.75 0 0 1 0-1.501h1.125a.375.375 0 0 0 .036-.748H3.74a.75.75 0 0 1-.75-.75v-.002a.75.75 0 0 1 .75-.75h.411a.375.375 0 0 0-.036-.748H2.99a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd" />
                     </svg>
                 </div>
 
+                <!-- Bouton Favoris -->
                 <div id="favoris" [class.active]="componentActif() === 'favoris'" (click)="afficherFavoris()">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                         <path d="m11.645 20.91-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z" />
@@ -27,12 +34,15 @@
                 </div>
             </div>
 
+            <!-- Boutons du bas : theme et compte -->
             <div class="menu-bas">
+                <!-- Bouton de changement de theme (clair/sombre) -->
                 <div id="changerTheme" (click)="onThemeToggle()">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                         <path fill-rule="evenodd" d="M9.528 1.718a.75.75 0 0 1 .162.819A8.97 8.97 0 0 0 9 6a9 9 0 0 0 9 9 8.97 8.97 0 0 0 3.463-.69.75.75 0 0 1 .981.98 10.503 10.503 0 0 1-9.694 6.46c-5.799 0-10.5-4.7-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 0 1 .818.162Z" clip-rule="evenodd" />
                     </svg>
                 </div>
+                <!-- Bouton d'ouverture de la popup compte -->
                 <div id="ouvertureCompte" (click)="toggleCompte()">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                         <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd" />
@@ -41,17 +51,19 @@
             </div>
         </div>
 
+        <!-- Affichage conditionnel du composant actif (accueil, favoris ou classement) -->
         <app-accueil *ngIf="componentActif() === 'accueil'"></app-accueil>
         <app-favoris *ngIf="componentActif() === 'favoris'"></app-favoris>
         <app-classement *ngIf="componentActif() === 'classement'"></app-classement>
     </div>
     
 
+    <!-- Conteneur de la carte Leaflet (partie droite) -->
     <div class="map-container">
         <app-map></app-map>
     </div>
 </div>
 
-    <!-- compte modal component -->
+    <!-- Popup modale du compte (affichee par-dessus le contenu) -->
     <app-compte *ngIf="showCompte()" (closed)="closeCompte()"></app-compte>
 <router-outlet></router-outlet>

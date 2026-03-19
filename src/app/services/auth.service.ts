@@ -1,3 +1,13 @@
+/**
+ * Service d'authentification - Gere la connexion/inscription via Supabase
+ * 
+ * Fonctionnalites :
+ * - Inscription et connexion par email/mot de passe
+ * - Connexion via Google OAuth
+ * - Deconnexion
+ * - Synchronisation de l'utilisateur OAuth avec la table users en base
+ * - Observable pour reagir aux changements d'etat de connexion
+ */
 import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import { BehaviorSubject, Observable } from 'rxjs';
@@ -6,10 +16,15 @@ import { BehaviorSubject, Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class AuthService {
+  /** Client Supabase pour les appels d'authentification */
   private supabase: SupabaseClient;
+  /** BehaviorSubject contenant l'utilisateur connecte (null si deconnecte) */
   private currentUserSubject: BehaviorSubject<User | null>;
+  /** Observable public pour que les composants reagissent aux changements d'auth */
   public currentUser$: Observable<User | null>;
+  /** Promise qui se resout quand la session Supabase est entierement chargee */
   private sessionLoadedPromise: Promise<void>;
+  /** Fonction de resolution de la promise de chargement de session */
   private sessionLoadedResolve: (() => void) | null = null;
 
   constructor() {

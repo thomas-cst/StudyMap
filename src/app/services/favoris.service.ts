@@ -1,3 +1,12 @@
+/**
+ * Service Favoris - Gere les villes favorites de l'utilisateur
+ * 
+ * Fonctionnalites :
+ * - Chargement des favoris depuis le serveur backend
+ * - Ajout et suppression de favoris via l'API
+ * - Signal reactif pour que les composants reagissent aux changements
+ * - Verification si une ville est en favoris
+ */
 import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
@@ -8,11 +17,14 @@ import { Ville } from './villes.service';
   providedIn: 'root'
 })
 export class FavorisService {
-  /** liste des villes en favoris */
+  /** Signal contenant la liste des villes en favoris */
   private favorisSignal = signal<Ville[]>([]);
+  /** Signal en lecture seule expose aux composants */
   favoris = this.favorisSignal.asReadonly();
 
+  /** Client HTTP pour les appels API */
   private http = inject(HttpClient);
+  /** Identifiant de la plateforme (navigateur ou serveur) */
   private platformId = inject(PLATFORM_ID);
 
   constructor() {
@@ -22,7 +34,7 @@ export class FavorisService {
     }
   }
 
-  /** Récupérer l'ID utilisateur depuis localStorage */
+  /** Recupere l'identifiant de l'utilisateur connecte depuis le localStorage */
   private getUserId(): number | null {
     if (!isPlatformBrowser(this.platformId)) {
       return null;
@@ -38,7 +50,7 @@ export class FavorisService {
     }
   }
 
-  /** Charger les favoris depuis le serveur */
+  /** Charge la liste des favoris depuis le serveur pour l'utilisateur connecte */
   private loadFavoris() {
     const userId = this.getUserId();
     if (!userId) {
@@ -59,7 +71,7 @@ export class FavorisService {
       });
   }
 
-  /** Ajouter un favori */
+  /** Ajoute une ville aux favoris via l'API puis recharge la liste */
   addFavoris(ville: Ville) {
     const userId = this.getUserId();
     if (!userId) {
@@ -83,7 +95,7 @@ export class FavorisService {
     });
   }
 
-  /** Retirer un favori */
+  /** Retire une ville des favoris via l'API */
   removeFavoris(ville: Ville) {
     const userId = this.getUserId();
     if (!userId) return;
@@ -105,7 +117,7 @@ export class FavorisService {
       });
   }
 
-  /** Toggle favori */
+  /** Ajoute ou retire une ville des favoris selon son etat actuel */
   toggleFavoris(ville: Ville) {
     const isFav = this.isFavoris(ville.nom);
     if (isFav) {
@@ -115,12 +127,12 @@ export class FavorisService {
     }
   }
 
-  /** Vérifier si une ville est en favoris */
+  /** Verifie si une ville est dans la liste des favoris par son nom */
   isFavoris(nom: string): boolean {
     return this.favorisSignal().some(v => v.nom === nom);
   }
 
-  /** Recharger les favoris */
+  /** Force le rechargement des favoris depuis le serveur */
   refresh() {
     this.loadFavoris();
   }

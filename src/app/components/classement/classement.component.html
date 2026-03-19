@@ -1,10 +1,13 @@
+<!-- Page classement avec recherche, filtres et resultats -->
 <div class="classement">
+    <!-- Zone de recherche et filtres -->
     <div class="recherches">
         <app-searchBar [query]="query" (search)="onSearch($event)"></app-searchBar>
         
         <app-filtre [menus]="'classement'" (onFiltreChange)="onFiltreChange($event)" ></app-filtre>
     </div> 
     <h2>Classement</h2>
+    <!-- Grille des resultats triee selon les filtres -->
     <div class="resultats">
         <app-resultats [filtreActuel]="filtreActuel()" [query]="query"></app-resultats>
     </div>

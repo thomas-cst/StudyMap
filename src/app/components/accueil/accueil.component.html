@@ -1,4 +1,6 @@
+<!-- Page d'accueil avec recherche et resultats -->
 <div class="accueil">
+    <!-- Zone de recherche : barre de recherche + filtres -->
     <div class="recherches">
         <app-searchBar (search)="onSearch($event)"></app-searchBar>
         
@@ -6,6 +8,7 @@
         
     </div>
     <h2>Résultats de recherche</h2>
+    <!-- Grille des resultats de villes -->
     <div class="resultats">
         <app-resultats [query]="searchTerm()" [filtreActuel]="filtreActuel()" ></app-resultats>
     </div>

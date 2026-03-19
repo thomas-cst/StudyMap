@@ -1,17 +1,18 @@
+<!-- Grille d'affichage des villes favorites -->
 <div class="resultats">
-  <!-- Loading state -->
+  <!-- Message si aucun favori -->
   <div *ngIf="villes().length === 0" class="loading">
     <p>Aucun favori pour le moment</p>
   </div>
 
-  <!-- Grille de favoris -->
+  <!-- Grille des cartes de villes favorites -->
   <ng-container *ngIf="villes().length > 0; else empty">
     <div class="ville-card" 
          *ngFor="let v of villes()" 
          [style.backgroundImage]="'url(' + (v.imageUrl || 'https://via.placeholder.com/400x300/cccccc/000000?text=' + encodeURIComponent(v.nom)) + ')'"
          [class.expanded]="isExpanded(v)">
       
-      <!-- Mode normal : afficher l'overlay et les boutons -->
+      <!-- Mode normal : carte avec image de fond, bouton coeur et bouton details -->
       <ng-container *ngIf="!isExpanded(v)">
         <!-- Icône coeur en haut à droite -->
         <button class="btn-favoris" 
@@ -38,7 +39,7 @@
         </button>
       </ng-container>
 
-      <!-- Mode agrandis : afficher les détails complets -->
+      <!-- Mode agrandi : affiche les details complets de la ville -->
       <ng-container *ngIf="isExpanded(v)">
         <div class="expanded-content">
           <div class="expanded-header">

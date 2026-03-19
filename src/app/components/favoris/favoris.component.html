@@ -1,4 +1,6 @@
+<!-- Page favoris avec recherche, filtres et affichage des villes favorites -->
 <div class="favoris">
+    <!-- Zone de recherche et filtres -->
     <div class="recherches">
         <app-searchBar [query]="query" (search)="onSearch($event)"></app-searchBar>
         
@@ -6,6 +8,7 @@
         
     </div> 
     <h2>Favoris</h2>
+    <!-- Grille des villes favorites -->
     <div class="resultats">
         <app-favoris-display [query]="query"></app-favoris-display>
     </div>

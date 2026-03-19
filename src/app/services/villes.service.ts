@@ -31,18 +31,18 @@ interface OpenMeteoGeocodingResult {
 })
 export class VillesService {
 
-  // Villes d'outre-mer à exclure
+  /** Ensemble des villes situees en outre-mer (exclues des resultats) */
   private villesOutreMer = new Set([
     'Fort-de-France', 'Pointe-à-Pitre', 'Cayenne', 'Saint-Denis', 'Mamoudzou', 'Nouméa', 'Papeete','Dembeni','Punaauia'
   ]);
 
-  //Villes proches de la mer
+  /** Ensemble des villes situees en bord de mer */
   private villesMer = new Set(['Brest', 'Lorient', 'Nantes', 'La Rochelle', 'Bordeaux',
     'Bayonne','Montpellier', 'Perpignan', 'Marseille', 'Toulon', 'Nice', 'Aix-en-Provence',
     'Caen', 'Le Havre', 'Rouen', 'Dunkerque','Ajaccio', 'Corte',
   ]);
 
-  // Villes montagneuses
+  /** Ensemble des villes situees en zone montagneuse */
   private villesMontagne = new Set([
     'Grenoble', 'Chambéry', 'Annecy', 'Valence', 'Gap',
     'Clermont-Ferrand', 'Aurillac', 'Le Puy-en-Velay',
@@ -55,14 +55,17 @@ export class VillesService {
   ]);
 
 
-  // Cache des coordonnées (vide au départ, se remplit via Wikidata)
+  /** Cache des coordonnees GPS deja recuperees (evite les appels API repetitifs) */
   private coordinatesCache: { [key: string]: { lat: number; lng: number } } = {};
 
-  // Corrections manuelles depuis assets/city-coordinates-fixes.json
+  /** Corrections manuelles de coordonnees chargees depuis un fichier JSON */
   private coordinatesFixes: { [key: string]: { lat: number; lng: number } } = {};
 
+  /** Cle utilisee pour stocker les villes dans le localStorage */
   private cacheKey = 'villes_cache_v2';
+  /** Cache memoire des villes (evite de relire le localStorage) */
   private villesCache: Ville[] | null = null;
+  /** URL de base de l'API de geocodage Open-Meteo */
   private openMeteoBaseUrl = 'https://geocoding-api.open-meteo.com/v1/search';
 
   constructor(private http: HttpClient) {
@@ -75,12 +78,12 @@ export class VillesService {
   }
 
 
-  //Vérifie si une ville est en bord de mer
+  /** Verifie si une ville est situee en bord de mer */
   isVilleMer(nom: string): boolean {
     return this.villesMer.has(nom);
   }
  
-  // Vérifie si une ville est en montagne
+  /** Verifie si une ville est situee en zone montagneuse */
   isVilleMontagne(nom: string): boolean {
     return this.villesMontagne.has(nom);
   }
@@ -118,7 +121,7 @@ export class VillesService {
     );
   }
 
-  /** Mapping backend → interface Ville */
+  /** Transforme les donnees du backend vers l'interface Ville utilisee cote client */
   private loadVillesFromBackend(): Observable<Ville[]> {
     return this.http.get<any[]>('/api/villes').pipe(
       map(villes => villes.map(v => ({
@@ -131,7 +134,7 @@ export class VillesService {
     );
   }
 
-  /** Convertit une URL Wikimedia originale en thumbnail 600px */
+  /** Convertit une URL Wikimedia originale en URL de miniature (600px de large) */
   private toThumbnail(url: string | null): string {
     if (!url) return '';
     // Déjà un thumbnail
@@ -144,7 +147,7 @@ export class VillesService {
     return url;
   }
 
-  /** Coordonnées d'une ville (cache > corrections > Open-Meteo) */
+  /** Recupere les coordonnees GPS d'une ville (cache > corrections manuelles > API Open-Meteo) */
   getCoordinatesForVille(nomVille: string, codeInsee?: string): Observable<{ lat: number; lng: number }> {
     if (codeInsee) {
       if (this.coordinatesCache[codeInsee]) {
