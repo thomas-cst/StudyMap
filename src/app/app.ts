@@ -6,6 +6,7 @@ import { AccueilComponent } from './components/accueil/accueil.component';
 import { CompteComponent } from './components/compte/compte.component';
 import { FavorisComponent } from './components/favoris/favoris.component';
 import { ClassementComponent } from './components/classement/classement.component';
+import { AuthService } from './services/auth.service';
 
 /**
  * Composant racine de l'application StudyMap
@@ -35,6 +36,8 @@ export class App implements OnInit {
   protected readonly bddMessage = signal<string>('');
   protected readonly title = signal('studyMap');
   protected readonly logoSrc = signal('assets/StudyMap.png');
+
+  private authService = inject(AuthService);
 
   /** Affichage de la popup login */
   protected showCompte = signal(false);
