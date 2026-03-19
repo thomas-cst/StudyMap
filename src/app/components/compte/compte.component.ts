@@ -24,6 +24,7 @@ export class CompteComponent implements OnInit {
   isLoading: boolean = false;
   signupForm: FormGroup;
   loginForm: FormGroup;
+  private wasConnectedBefore: boolean = false; // Track initial state
 
   constructor(private fb: FormBuilder, private authService: AuthService, private dataService: DataService) {
     this.signupForm = this.fb.group({
@@ -43,6 +44,7 @@ export class CompteComponent implements OnInit {
     // Attendre que la session Supabase soit chargée, puis vérifier l'état de connexion
     this.authService.ensureSessionLoaded().then(() => {
       this.checkIfConnected();
+      this.wasConnectedBefore = this.isConnected; // Mark initial state
     });
 
     // Écouter les changements d'authentification (pour OAuth et localStorage)
@@ -50,9 +52,18 @@ export class CompteComponent implements OnInit {
       if (user) {
         this.currentUser = { email: user.email, name: user.email?.split('@')[0] };
         this.isConnected = true;
+        
+        // If we just became connected (and weren't before), show success message
+        if (!this.wasConnectedBefore) {
+          this.successMessage = 'Connexion réussie !';
+          this.errorMessage = '';
+          this.showLoginForm = false;
+          this.showSignupForm = false;
+        }
+        this.wasConnectedBefore = true;
       } else {
-        // Vérifier localStorage si Supabase n'a rien
         this.checkIfConnected();
+        this.wasConnectedBefore = this.isConnected;
       }
     });
   }
@@ -123,8 +134,6 @@ export class CompteComponent implements OnInit {
           this.showSignupForm = false;
           // Forcer la vérification de la connexion
           this.checkIfConnected();
-          // Fermer le modal après un court délai pour voir le message
-          setTimeout(() => this.close(), 1500);
         },
         error: (err) => {
           this.isLoading = false;
@@ -153,8 +162,6 @@ export class CompteComponent implements OnInit {
           this.showLoginForm = false;
           // Forcer la vérification de la connexion
           this.checkIfConnected();
-          // Fermer le modal après un court délai pour voir le message
-          setTimeout(() => this.close(), 1500);
         },
         error: (err) => {
           this.isLoading = false;
@@ -173,14 +180,12 @@ export class CompteComponent implements OnInit {
       if (!error) {
         this.isConnected = false;
         this.currentUser = null;
+        this.showLoginForm = false;
+        this.showSignupForm = false;
         this.successMessage = 'Déconnexion réussie';
         this.errorMessage = '';
         this.loginForm.reset();
         this.signupForm.reset();
-        // Laisser voir le message quelques secondes
-        setTimeout(() => {
-          this.close();
-        }, 1500);
       } else {
         this.errorMessage = 'Erreur lors de la déconnexion';
       }
@@ -190,13 +195,13 @@ export class CompteComponent implements OnInit {
   onGoogleLogin() {
     this.isLoading = true;
     this.clearMessages();
+    sessionStorage.setItem('googleLoginPending', 'true'); // 👈 AJOUT
     this.authService.loginWithGoogle().then(({ error }) => {
       this.isLoading = false;
       if (error) {
+        sessionStorage.removeItem('googleLoginPending'); // 👈 AJOUT (en cas d'erreur)
         this.errorMessage = error.message || 'Erreur lors de la connexion Google';
-        console.error('Google login error:', error);
       }
-      // La redirection se fera automatiquement
     });
   }
 
