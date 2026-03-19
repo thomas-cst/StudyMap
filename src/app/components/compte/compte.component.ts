@@ -3,7 +3,6 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
-import { DataService } from '../../services/data.service';
 
 @Component({
   selector: 'app-compte',
@@ -25,7 +24,7 @@ export class CompteComponent implements OnInit {
   signupForm: FormGroup;
   loginForm: FormGroup;
 
-  constructor(private fb: FormBuilder, private authService: AuthService, private dataService: DataService) {
+  constructor(private fb: FormBuilder, private authService: AuthService) {
     this.signupForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,20}$/)]],
@@ -108,60 +107,52 @@ export class CompteComponent implements OnInit {
     this.errorMessage = '';
   }
 
-  onSignup() {
+  async onSignup() {
     if (this.signupForm.valid) {
       this.isLoading = true;
       const { email, password } = this.signupForm.value;
 
-      this.dataService.signup(email, password).subscribe({
-        next: (response) => {
-          this.isLoading = false;
-          localStorage.setItem('user', JSON.stringify(response.user));
-          this.successMessage = 'Inscription réussie ! Bienvenue !';
-          this.errorMessage = '';
-          this.signupForm.reset();
-          this.showSignupForm = false;
-          // Forcer la vérification de la connexion
-          this.checkIfConnected();
-          // Fermer le modal après un court délai pour voir le message
-          setTimeout(() => this.close(), 1500);
-        },
-        error: (err) => {
-          this.isLoading = false;
-          this.errorMessage = err.error?.error || 'Erreur lors de l\'inscription';
-          console.error('Signup error:', err);
-        }
-      });
+      const { user, error } = await this.authService.signUp(email, password);
+      this.isLoading = false;
+
+      if (error) {
+        this.errorMessage = error.message || 'Erreur lors de l\'inscription';
+        console.error('Signup error:', error);
+        return;
+      }
+
+      this.successMessage = 'Inscription réussie ! Vérifiez votre email pour confirmer.';
+      this.errorMessage = '';
+      this.signupForm.reset();
+      this.showSignupForm = false;
+      this.checkIfConnected();
+      setTimeout(() => this.close(), 1500);
     }
   }
 
-  onLogin() {
+  async onLogin() {
     if (this.loginForm.valid) {
       this.isLoading = true;
       const { email, password, rememberMe } = this.loginForm.value;
 
-      this.dataService.login(email, password).subscribe({
-        next: (response) => {
-          this.isLoading = false;
-          localStorage.setItem('user', JSON.stringify(response.user));
-          if (rememberMe) {
-            localStorage.setItem('rememberMe', 'true');
-          }
-          this.successMessage = 'Connexion réussie !';
-          this.errorMessage = '';
-          this.loginForm.reset();
-          this.showLoginForm = false;
-          // Forcer la vérification de la connexion
-          this.checkIfConnected();
-          // Fermer le modal après un court délai pour voir le message
-          setTimeout(() => this.close(), 1500);
-        },
-        error: (err) => {
-          this.isLoading = false;
-          this.errorMessage = err.error?.error || 'Erreur lors de la connexion';
-          console.error('Login error:', err);
-        }
-      });
+      const { user, error } = await this.authService.signIn(email, password);
+      this.isLoading = false;
+
+      if (error) {
+        this.errorMessage = error.message || 'Erreur lors de la connexion';
+        console.error('Login error:', error);
+        return;
+      }
+
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      }
+      this.successMessage = 'Connexion réussie !';
+      this.errorMessage = '';
+      this.loginForm.reset();
+      this.showLoginForm = false;
+      this.checkIfConnected();
+      setTimeout(() => this.close(), 1500);
     }
   }
 

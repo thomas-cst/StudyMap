@@ -103,6 +103,25 @@ export class AuthService {
   }
 
   /**
+   * Inscription par email/mot de passe
+   */
+  async signUp(email: string, password: string): Promise<{ user: User | null; error: any }> {
+    const { data, error } = await this.supabase.auth.signUp({ email, password });
+    if (!error && data.user) {
+      await this.syncUserWithDatabase(data.user);
+    }
+    return { user: data.user ?? null, error };
+  }
+
+  /**
+   * Connexion par email/mot de passe
+   */
+  async signIn(email: string, password: string): Promise<{ user: User | null; error: any }> {
+    const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
+    return { user: data.user ?? null, error };
+  }
+
+  /**
    * Connexion avec Google OAuth
    */
   async loginWithGoogle(): Promise<{ error: any }> {

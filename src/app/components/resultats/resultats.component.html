@@ -8,8 +8,14 @@
   <ng-container *ngIf="!isLoading() && filtered().length; else empty">
     <div class="ville-card" 
          *ngFor="let v of filtered()" 
-         [style.backgroundImage]="'url(' + (v.imageUrl || 'https://via.placeholder.com/400x300/cccccc/000000?text=' + encodeURIComponent(v.nom)) + ')'"
          [class.expanded]="isExpanded(v)">
+
+      <!-- Image lazy-loaded -->
+      <img *ngIf="!isExpanded(v)"
+           [src]="v.imageUrl || 'https://placehold.co/400x300/cccccc/333333?text=' + encodeURIComponent(v.nom)"
+           [alt]="v.nom"
+           loading="lazy"
+           class="ville-card-bg" />
       
       <!-- Mode normal : afficher l'overlay et les boutons -->
       <ng-container *ngIf="!isExpanded(v)">

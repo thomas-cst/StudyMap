@@ -46,7 +46,7 @@ export class FavorisService {
       return;
     }
 
-    this.http.get<{ favoris: Ville[] }>(`http://localhost:3000/api/favorites/${userId}`)
+    this.http.get<{ favoris: Ville[] }>(`/api/favorites/${userId}`)
       .subscribe({
         next: (data) => {
           console.log('Favoris chargés:', data.favoris);
@@ -67,7 +67,7 @@ export class FavorisService {
       return;
     }
 
-    this.http.post('http://localhost:3000/api/favorites/add', {
+    this.http.post('/api/favorites/add', {
       id_user: userId,
       nom: ville.nom,
       imageUrl: ville.imageUrl,
@@ -96,7 +96,7 @@ export class FavorisService {
       return;
     }
 
-    this.http.delete(`http://localhost:3000/api/favorites/remove/${userId}/${idVille}`)
+    this.http.delete(`/api/favorites/remove/${userId}/${idVille}`)
       .subscribe({
         next: () => {
           this.favorisSignal.set(this.favorisSignal().filter(v => v.nom !== ville.nom));

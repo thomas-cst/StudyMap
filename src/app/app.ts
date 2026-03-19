@@ -40,7 +40,6 @@ export class App implements OnInit {
   protected showCompte = signal(false);
 
   ngOnInit() {
-    // Backend test removed - DataService was only for testing
   }
 
   protected toggleCompte() {
