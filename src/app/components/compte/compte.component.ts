@@ -1,9 +1,18 @@
+/**
+ * Composant Compte - Popup modale de gestion du compte utilisateur
+ * 
+ * Fonctionnalites :
+ * - Formulaire d'inscription avec validation (email, mot de passe securise)
+ * - Formulaire de connexion avec option "rester connecte"
+ * - Connexion via Google OAuth
+ * - Deconnexion
+ * - Verification automatique de la session au chargement
+ */
 import { Component, EventEmitter, Output, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
-import { DataService } from '../../services/data.service';
 
 @Component({
   selector: 'app-compte',
@@ -13,19 +22,32 @@ import { DataService } from '../../services/data.service';
   imports: [ReactiveFormsModule, CommonModule, HttpClientModule]
 })
 export class CompteComponent implements OnInit {
+  /** Evenement emis pour fermer la popup depuis le composant parent */
   @Output() closed = new EventEmitter<void>();
 
+  /** Controle l'affichage du formulaire d'inscription */
   showSignupForm: boolean = false;
+  /** Controle l'affichage du formulaire de connexion */
   showLoginForm: boolean = false;
+  /** Indique si l'utilisateur est actuellement connecte */
   isConnected: boolean = false;
+  /** Donnees de l'utilisateur connecte (email, nom) */
   currentUser: any = null;
+  /** Message de succes affiche apres une action reussie */
   successMessage: string = '';
+  /** Message d'erreur affiche en cas de probleme */
   errorMessage: string = '';
+  /** Indicateur de chargement (pendant les appels API) */
   isLoading: boolean = false;
+  /** Formulaire reactif d'inscription avec validateurs */
   signupForm: FormGroup;
+  /** Formulaire reactif de connexion */
   loginForm: FormGroup;
 
-  constructor(private fb: FormBuilder, private authService: AuthService, private dataService: DataService) {
+  /** Empêche l'affichage du message de succès au chargement si déjà connecté */
+  private wasConnectedBefore: boolean = false;
+
+  constructor(private fb: FormBuilder, private authService: AuthService) {
     this.signupForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,20}$/)]],
@@ -43,6 +65,7 @@ export class CompteComponent implements OnInit {
     // Attendre que la session Supabase soit chargée, puis vérifier l'état de connexion
     this.authService.ensureSessionLoaded().then(() => {
       this.checkIfConnected();
+      this.wasConnectedBefore = this.isConnected; // Mark initial state
     });
 
     // Écouter les changements d'authentification (pour OAuth et localStorage)
@@ -50,15 +73,25 @@ export class CompteComponent implements OnInit {
       if (user) {
         this.currentUser = { email: user.email, name: user.email?.split('@')[0] };
         this.isConnected = true;
+        
+        // If we just became connected (and weren't before), show success message
+        if (!this.wasConnectedBefore) {
+          this.successMessage = 'Connexion réussie !';
+          this.errorMessage = '';
+          this.showLoginForm = false;
+          this.showSignupForm = false;
+        }
+        this.wasConnectedBefore = true;
       } else {
-        // Vérifier localStorage si Supabase n'a rien
         this.checkIfConnected();
+        this.wasConnectedBefore = this.isConnected;
       }
     });
   }
 
+  /** Verifie l'etat de connexion : d'abord Supabase, puis localStorage en fallback */
   checkIfConnected() {
-    // Vérifier d'abord dans Supabase
+    // Verifier d'abord dans Supabase
     const supabaseUser = this.authService.getCurrentUser();
     if (supabaseUser) {
       this.currentUser = { email: supabaseUser.email, name: supabaseUser.email?.split('@')[0] };
@@ -81,6 +114,7 @@ export class CompteComponent implements OnInit {
     }
   }
 
+  /** Validateur personnalise : verifie que les deux mots de passe correspondent */
   passwordMatchValidator(form: FormGroup): any {
     const password = form.get('password');
     const confirmPassword = form.get('confirmPassword');
@@ -91,80 +125,77 @@ export class CompteComponent implements OnInit {
     return null;
   }
 
+  /** Affiche ou masque le formulaire d'inscription (et masque la connexion) */
   toggleSignupForm() {
     this.showSignupForm = !this.showSignupForm;
     this.showLoginForm = false;
     this.clearMessages();
   }
 
+  /** Affiche ou masque le formulaire de connexion (et masque l'inscription) */
   toggleLoginForm() {
     this.showLoginForm = !this.showLoginForm;
     this.showSignupForm = false;
     this.clearMessages();
   }
 
+  /** Efface les messages de succes et d'erreur */
   clearMessages() {
     this.successMessage = '';
     this.errorMessage = '';
   }
 
-  onSignup() {
+  /** Soumission du formulaire d'inscription */
+  async onSignup() {
     if (this.signupForm.valid) {
       this.isLoading = true;
       const { email, password } = this.signupForm.value;
 
-      this.dataService.signup(email, password).subscribe({
-        next: (response) => {
-          this.isLoading = false;
-          localStorage.setItem('user', JSON.stringify(response.user));
-          this.successMessage = 'Inscription réussie ! Bienvenue !';
-          this.errorMessage = '';
-          this.signupForm.reset();
-          this.showSignupForm = false;
-          // Forcer la vérification de la connexion
-          this.checkIfConnected();
-          // Fermer le modal après un court délai pour voir le message
-          setTimeout(() => this.close(), 1500);
-        },
-        error: (err) => {
-          this.isLoading = false;
-          this.errorMessage = err.error?.error || 'Erreur lors de l\'inscription';
-          console.error('Signup error:', err);
-        }
-      });
+      const { user, error } = await this.authService.signUp(email, password);
+      this.isLoading = false;
+
+      if (error) {
+        this.errorMessage = error.message || 'Erreur lors de l\'inscription';
+        console.error('Signup error:', error);
+        return;
+      }
+
+      this.successMessage = 'Inscription réussie ! Vérifiez votre email pour confirmer.';
+      this.errorMessage = '';
+      this.signupForm.reset();
+      this.showSignupForm = false;
+      this.checkIfConnected();
+      setTimeout(() => this.close(), 1500);
     }
   }
-
-  onLogin() {
+  /** Soumission du formulaire de connexion */
+  async onLogin() {
     if (this.loginForm.valid) {
       this.isLoading = true;
       const { email, password, rememberMe } = this.loginForm.value;
 
-      this.dataService.login(email, password).subscribe({
-        next: (response) => {
-          this.isLoading = false;
-          localStorage.setItem('user', JSON.stringify(response.user));
-          if (rememberMe) {
-            localStorage.setItem('rememberMe', 'true');
-          }
-          this.successMessage = 'Connexion réussie !';
-          this.errorMessage = '';
-          this.loginForm.reset();
-          this.showLoginForm = false;
-          // Forcer la vérification de la connexion
-          this.checkIfConnected();
-          // Fermer le modal après un court délai pour voir le message
-          setTimeout(() => this.close(), 1500);
-        },
-        error: (err) => {
-          this.isLoading = false;
-          this.errorMessage = err.error?.error || 'Erreur lors de la connexion';
-          console.error('Login error:', err);
-        }
-      });
+      const { user, error } = await this.authService.signIn(email, password);
+      this.isLoading = false;
+
+      if (error) {
+        this.errorMessage = error.message || 'Erreur lors de la connexion';
+        console.error('Login error:', error);
+        return;
+      }
+
+      if (rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      }
+      this.successMessage = 'Connexion réussie !';
+      this.errorMessage = '';
+      this.loginForm.reset();
+      this.showLoginForm = false;
+      this.checkIfConnected();
+      setTimeout(() => this.close(), 1500);
     }
   }
 
+  /** Déconnexion de l'utilisateur (localStorage + Supabase) */
   logout() {
     localStorage.removeItem('user');
     this.isLoading = true;
@@ -173,33 +204,33 @@ export class CompteComponent implements OnInit {
       if (!error) {
         this.isConnected = false;
         this.currentUser = null;
+        this.showLoginForm = false;
+        this.showSignupForm = false;
         this.successMessage = 'Déconnexion réussie';
         this.errorMessage = '';
         this.loginForm.reset();
         this.signupForm.reset();
-        // Laisser voir le message quelques secondes
-        setTimeout(() => {
-          this.close();
-        }, 1500);
       } else {
         this.errorMessage = 'Erreur lors de la déconnexion';
       }
     });
   }
 
+  /** Connexion via Google OAuth (redirige vers Google) */
   onGoogleLogin() {
     this.isLoading = true;
     this.clearMessages();
+    sessionStorage.setItem('oauthLoginPending', 'true');
     this.authService.loginWithGoogle().then(({ error }) => {
       this.isLoading = false;
       if (error) {
+        sessionStorage.removeItem('oauthLoginPending');
         this.errorMessage = error.message || 'Erreur lors de la connexion Google';
-        console.error('Google login error:', error);
       }
-      // La redirection se fera automatiquement
     });
   }
 
+  /** Ferme la popup en emettant l'evenement vers le parent */
   close(): void {
     this.closed.emit();
   }

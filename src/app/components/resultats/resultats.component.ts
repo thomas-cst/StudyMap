@@ -1,25 +1,26 @@
-import { Component, Input, computed, signal, inject, effect, OnChanges, SimpleChanges, OnInit, DestroyRef } from '@angular/core';
+/**
+ * Composant Resultats - Grille des villes avec filtrage, favoris et zoom carte
+ * 
+ * Fonctionnalites :
+ * - Chargement des villes depuis le backend
+ * - Filtrage par recherche textuelle, bord de mer, montagne, geolocalisation
+ * - Tri par villes recemment consultees
+ * - Expansion d'une carte ville pour voir les details et zoomer sur la carte
+ * - Gestion des favoris (ajout/suppression)
+ * - Calcul de distance (formule de Haversine) pour le tri par proximite
+ */
+import { Component, input,Input, computed, signal, inject, effect, OnChanges, SimpleChanges, OnInit, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FavorisService } from '../../services/favoris.service';
 import { VillesService, Ville } from '../../services/villes.service';
 import { MapSyncService } from '../../services/map-sync.service';
 import { SearchSyncService } from '../../services/search-sync.service';
+import { AuthService } from '../../services/auth.service';
+import { AuthPopupService } from '../../services/auth-popup.service';
 
 /**
- * Composant ResultatsComponent - Affiche la liste des villes avec filtrage
- * 
- * Responsabilités:
- * - Charger les 48 villes depuis le backend
- * - Filtrer basé sur la barre de recherche
- * - Afficher les villes dans une grille
- * - Marquer les favoris
- * - Synchroniser le zoom de la carte quand on clique une ville
- * 
- * Signaux principaux:
- * - villes: liste complète des 48 villes
- * - querySignal: terme de recherche
- * - isLoading: état du chargement
+ * Composant résultats - Grille des villes avec filtrage, favoris et zoom carte
  */
 @Component({
   selector: 'app-resultats', 
@@ -29,46 +30,71 @@ import { SearchSyncService } from '../../services/search-sync.service';
   styleUrl: './resultats.component.scss'
 })
 export class ResultatsComponent implements OnChanges, OnInit {
-  /** Terme de recherche passé par le parent AccueilComponent */
+  /** Terme de recherche recu depuis le composant parent */
   @Input() query = '';
 
+  /** Signal local pour suivre la query de maniere reactive */
   private querySignal = signal('');
+
+  /** Filtre actuellement selectionne (recu du parent via input) */
+  filtreActuel = input<string>('');
+
+  /** Service de gestion des favoris */
   private favorisService = inject(FavorisService);
+  /** Service pour recuperer les villes et leurs coordonnees */
   private villesService = inject(VillesService);
+  /** Service de synchronisation avec la carte (zoom, villes recentes) */
   private mapSyncService = inject(MapSyncService);
+  /** Service de synchronisation de la barre de recherche */
   private searchSyncService = inject(SearchSyncService);
+  /** Service d'authentification pour verifier la connexion */
+  private authService = inject(AuthService);
+  /** Service pour demander l'ouverture de la popup de connexion */
+  private authPopupService = inject(AuthPopupService);
+  /** Reference de destruction pour nettoyer les subscriptions RxJS */
   private destroyRef = inject(DestroyRef);
 
-  /** Liste complète des villes chargées depuis le backend */
+  /** Liste de toutes les villes chargees depuis le backend */
   private villes = signal<Ville[]>([]);
-
-  /** État du chargement initial */
+  /** Indicateur de chargement des villes */
   isLoading = signal(true);
-
-  /** Signal des favoris pour le template */
+  /** Acces en lecture seule aux favoris du service */
   get favoris() {
     return this.favorisService.favoris;
   }
 
-  /** Ville actuellement agrandie dans la grille (pour vue détail) */
+  /** Ville actuellement agrandie dans la grille */
   expandedVille = signal<Ville | null>(null);
-
-  /** Évite de zoomer deux fois sur la même ville */
+  /** Derniere ville zoomee pour eviter les appels API dupliques */
   private lastZoomedVille = signal<string | null>(null);
-
-  /** Évite que la recherche n'override une sélection manuelle */
+  /** Indique si la selection est manuelle (clic) ou automatique (recherche) */
   private isManualSelection = signal<boolean>(false);
 
+  /** Charge les villes depuis le backend au demarrage */
   ngOnInit() {
     this.loadVilles();
   }
 
+  /** Recupere les villes via le service et met en cache les coordonnees manquantes */
   private loadVilles() {
     this.isLoading.set(true);
     this.villesService.getVilles().subscribe({
       next: (villes) => {
         this.villes.set(villes);
         this.isLoading.set(false);
+
+        villes.forEach(ville => {
+          if (ville.lat === undefined) {
+            this.villesService.getCoordinatesForVille(ville.nom)
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe(coords => {
+                this.villes.update(currentVilles => 
+                  currentVilles.map(v => v.nom === ville.nom ? { ...v, lat: coords.lat, lng: coords.lng } : v)
+                );
+              });
+          }
+        });
+
       },
       error: (err) => {
         console.error('ERROR: Chargement des villes échoué:', err);
@@ -107,97 +133,119 @@ export class ResultatsComponent implements OnChanges, OnInit {
     });
   }
 
-  /** sync les changements d'Input avec le signal local */
+  /** Synchronise le changement d'Input query avec le signal local */
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['query']) {
       this.querySignal.set(this.query);
-      // Réinitialiser la sélection manuelle quand la requête change (permet à la recherche de fonctionner)
       this.isManualSelection.set(false);
     }
   }
 
-  /** affiche TOUTES les villes */
-  filtered = computed(() => {
-    const all = this.villes();
-    const recent = this.mapSyncService.recentlyViewed();
-    
-    if (recent.length === 0) return all;
-    
-    // Créer un Map pour des lookups O(1) des codes INSEE au lieu du nom
-    const recentMap = new Map(recent.map((code, i) => [code, i]));
-    
-    // Trier sans muter l'array original
-    return [...all].sort((a, b) => {
-      const aIndex = recentMap.get(a.code);
-      const bIndex = recentMap.get(b.code);
+  /** Liste filtree et triee des villes selon la recherche et les filtres actifs */
+ filtered = computed(() => {
+    let list = [...this.villes()];
+    const currentFiltre = this.filtreActuel();
+    const q = this.querySignal().trim().toLowerCase();
+
+    // Filtrer par nom (Barre de recherche)
+    if (q) {
+      list = list.filter(v => v.nom.toLowerCase().includes(q));
+    }
+
+    // Filtre "Bord de mer"
+    if (currentFiltre === 'mer') {
+      return list.filter(v => this.villesService.isVilleMer(v.nom));
+    }
+ 
+    // Filtre "Montagne"
+    if (currentFiltre === 'montagne') {
+      return list.filter(v => this.villesService.isVilleMontagne(v.nom));
+    }
+
+    // Filtre "Autour de moi" 
+   if (currentFiltre.startsWith('geo:')) {
+      const [lat, lng] = currentFiltre.replace('geo:', '').split(',').map(Number);
       
-      const aIsRecent = aIndex !== undefined;
-      const bIsRecent = bIndex !== undefined;
-      
-      if (aIsRecent && !bIsRecent) return -1;
-      if (!aIsRecent && bIsRecent) return 1;
-      
-      // Si les deux sont récentes, garder l'ordre de recentlyViewed
-      if (aIsRecent && bIsRecent) {
-        return aIndex! - bIndex!;
+      // On ne trie que les villes qui ont des coordonnées valides
+      return list
+        .filter(v => v.lat !== undefined && v.lng !== undefined)
+        .sort((a, b) => {
+          const distA = this.getDistance(lat, lng, a.lat!, a.lng!);
+          const distB = this.getDistance(lat, lng, b.lat!, b.lng!);
+          return distA - distB;
+        });
+    }
+    // Si on a pas accès aux données de géoloc -> trier par consultés récemment
+    else {
+      const recent = this.mapSyncService.recentlyViewed();
+      if (recent.length > 0) {
+        const recentMap = new Map(recent.map((v, i) => [v, i]));
+        list.sort((a, b) => {
+          const aIndex = recentMap.get(a.nom);
+          const bIndex = recentMap.get(b.nom);
+          if (aIndex !== undefined && bIndex === undefined) return -1;
+          if (aIndex === undefined && bIndex !== undefined) return 1;
+          if (aIndex !== undefined && bIndex !== undefined) return aIndex - bIndex;
+          return 0;
+        });
       }
-      
-      return 0;
-    });
+    }
+
+    return list;
   });
 
-  /** villes uniquement dans les favoris */
+  /** Liste des villes qui sont en favoris */
   favorisFiltered = computed(() => {
     return this.villes().filter(v => this.favorisService.isFavoris(v.nom));
   });
 
-  /** toggle une ville en favoris */
+  /** Ajoute ou retire une ville des favoris (ouvre la popup login si non connecte) */
   toggleFavoris(ville: Ville) {
+    if (!this.authService.isAuthenticated()) {
+      this.authPopupService.requestLogin();
+      return;
+    }
     this.favorisService.toggleFavoris(ville);
   }
 
-  /** check si une ville est en favoris */
+  /** Verifie si une ville est dans la liste des favoris */
   isFavoris(nom: string): boolean {
     return this.favorisService.isFavoris(nom);
   }
 
-  /** encode URI pour les URLs */
+  /** Encode une chaine pour utilisation dans les URLs */
   encodeURIComponent(str: string): string {
     return encodeURIComponent(str);
   }
 
-  /** Méthode commune pour expand + zoom */
+  /** Agrandit la carte ville, scrolle vers le haut et zoome sur la carte Leaflet */
   private expandAndZoom(ville: Ville) {
-    // Remonter vers la liste des résultats (chercher l'élément avec classe 'resultats')
-    // Utiliser un délai pour laisser le DOM se mettre à jour
     setTimeout(() => {
-      const resultatsElement = document.querySelector('.resultats');
-      if (resultatsElement) {
-        resultatsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      const el = document.querySelector('.resultats');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      else window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 100);
     
-    // Ajouter aux récemment consultées (utiliser le code INSEE pour fiabilité)
+    // Ajouter aux récemment consultées
     this.mapSyncService.addToRecentlyViewed(ville.code);
     
-    // Si les coordonnées sont en cache, zoomer directement
     if (ville.lat !== undefined && ville.lng !== undefined) {
       this.mapSyncService.zoomToVille(ville.nom, ville.lat, ville.lng);
     } else {
-      // Sinon, récupérer les coordonnées via le code INSEE
-      console.log(`INFO: Récupération coordonnées pour ${ville.nom}`);
+      // Fallback: récupérer via Open-Meteo
       this.villesService.getCoordinatesForVille(ville.nom, ville.code)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(coords => {
-          console.log(`INFO: Zoom vers ${ville.nom}`);
+          console.log(`🗺️ Zoom vers ${ville.nom}:`, coords);
+          this.villes.update(villes => 
+            villes.map(v => v.nom === ville.nom ? { ...v, lat: coords.lat, lng: coords.lng } : v)
+          );
           this.mapSyncService.zoomToVille(ville.nom, coords.lat, coords.lng);
         });
     }
   }
 
-  /** toggle l'expansion d'une ville */
+  /** Ouvre ou ferme les details d'une ville dans la grille */
   toggleExpanded(ville: Ville) {
     if (this.expandedVille()?.code === ville.code) {
       // Fermer la ville
@@ -215,8 +263,20 @@ export class ResultatsComponent implements OnChanges, OnInit {
     }
   }
 
-  /** check si une ville est agrandie */
+  /** Verifie si une ville est actuellement agrandie */
   isExpanded(ville: Ville): boolean {
     return this.expandedVille()?.code === ville.code;
+  }
+
+  /** Calcule la distance en km entre deux coordonnees GPS (formule de Haversine) */
+  private getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+      const R = 6371; // Rayon de la terre
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
   }
 }
