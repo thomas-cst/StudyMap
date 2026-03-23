@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FavorisService } from '../../services/favoris.service';
 import { VillesService, Ville } from '../../services/villes.service';
+import { UniversitesService, Universite } from '../../services/universites.service';
 import { MapSyncService } from '../../services/map-sync.service';
 import { SearchSyncService } from '../../services/search-sync.service';
+import { RestaurantsUniversitairesComponent } from '../restaurants-universitaires/restaurants-universitaires.component';
 
 /**
  * Composant résultats - Grille des villes avec filtrage, favoris et zoom carte
@@ -12,7 +14,7 @@ import { SearchSyncService } from '../../services/search-sync.service';
 @Component({
   selector: 'app-resultats', 
   standalone: true,        
-  imports: [CommonModule],            
+  imports: [CommonModule, RestaurantsUniversitairesComponent],            
   templateUrl: './resultats.component.html',
   styleUrl: './resultats.component.scss'
 })
@@ -22,6 +24,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
   private querySignal = signal('');
   private favorisService = inject(FavorisService);
   private villesService = inject(VillesService);
+  private universitesService = inject(UniversitesService);
   private mapSyncService = inject(MapSyncService);
   private searchSyncService = inject(SearchSyncService);
   private destroyRef = inject(DestroyRef);
@@ -33,6 +36,9 @@ export class ResultatsComponent implements OnChanges, OnInit {
   }
 
   expandedVille = signal<Ville | null>(null);
+  expandedUniversiteId = signal<number | null>(null);
+  universitesMap = signal<{ [villeId: number]: Universite[] }>({});
+  universitesLoading = signal(false);
   private lastZoomedVille = signal<string | null>(null);
   private isManualSelection = signal<boolean>(false);
 
@@ -79,6 +85,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
           this.expandedVille.set(matching);
           this.lastZoomedVille.set(matching.code);
           this.expandAndZoom(matching);
+          this.loadUniversites(matching);
         }
       }
     });
@@ -170,21 +177,54 @@ export class ResultatsComponent implements OnChanges, OnInit {
     if (this.expandedVille()?.code === ville.code) {
       // Fermer la ville
       this.expandedVille.set(null);
+      this.expandedUniversiteId.set(null);
       this.isManualSelection.set(false);
-      this.querySignal.set(''); // Vider le signal local
-      this.searchSyncService.clearSearch(); // Demander au parent de vider l'input
+      this.querySignal.set('');
+      this.searchSyncService.clearSearch();
     } else {
       // Ouvrir une nouvelle ville
       this.expandedVille.set(ville);
+      this.expandedUniversiteId.set(null);
       this.lastZoomedVille.set(ville.code);
-      this.isManualSelection.set(true); // Blocker la recherche d'override la sélection
-      this.querySignal.set(''); // Vider le buffer recherche
+      this.isManualSelection.set(true);
+      this.querySignal.set('');
       this.expandAndZoom(ville);
+      this.loadUniversites(ville);
     }
+  }
+
+  /** Charge les universités d'une ville */
+  private loadUniversites(ville: Ville) {
+    if (this.universitesMap()[ville.id]) return;
+    this.universitesLoading.set(true);
+    this.universitesService.getByVilleId(ville.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (unis) => {
+          this.universitesMap.update(m => ({ ...m, [ville.id]: unis }));
+          this.universitesLoading.set(false);
+        },
+        error: () => this.universitesLoading.set(false)
+      });
+  }
+
+  /** Retourne les universités de la ville expanded */
+  getUniversites(villeId: number): Universite[] {
+    return this.universitesMap()[villeId] || [];
   }
 
   /** check si une ville est agrandie */
   isExpanded(ville: Ville): boolean {
     return this.expandedVille()?.code === ville.code;
+  }
+
+  toggleUniversiteRestaurants(universiteId: number): void {
+    this.expandedUniversiteId.set(
+      this.expandedUniversiteId() === universiteId ? null : universiteId
+    );
+  }
+
+  isUniversiteExpanded(universiteId: number): boolean {
+    return this.expandedUniversiteId() === universiteId;
   }
 }

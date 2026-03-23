@@ -7,9 +7,15 @@
   <!-- Grille de favoris -->
   <ng-container *ngIf="villes().length > 0; else empty">
     <div class="ville-card" 
-         *ngFor="let v of villes()" 
-         [style.backgroundImage]="'url(' + (v.imageUrl || 'https://via.placeholder.com/400x300/cccccc/000000?text=' + encodeURIComponent(v.nom)) + ')'"
+        *ngFor="let v of villes()"
          [class.expanded]="isExpanded(v)">
+
+      <!-- Image lazy-loaded -->
+      <img *ngIf="!isExpanded(v)"
+          [src]="v.imageUrl || 'https://placehold.co/400x300/cccccc/333333?text=' + encodeURIComponent(v.nom)"
+          [alt]="v.nom"
+          loading="lazy"
+          class="ville-card-bg" />
       
       <!-- Mode normal : afficher l'overlay et les boutons -->
       <ng-container *ngIf="!isExpanded(v)">
@@ -42,7 +48,14 @@
       <ng-container *ngIf="isExpanded(v)">
         <div class="expanded-content">
           <div class="expanded-header">
-            <h2>{{ v.nom }}</h2>
+            <div class="expanded-title-block">
+              <h2>{{ v.nom }}</h2>
+              <div class="ville-meta" *ngIf="v.nb_hab || v.nb_etu">
+                <span *ngIf="v.nb_hab">{{ v.nb_hab | number }} habitants</span>
+                <span *ngIf="v.nb_hab && v.nb_etu">•</span>
+                <span *ngIf="v.nb_etu">{{ v.nb_etu | number }} étudiants</span>
+              </div>
+            </div>
             <button class="btn-collapse" 
                     (click)="toggleExpanded(v)"
                     title="Réduire">
@@ -52,9 +65,56 @@
             </button>
           </div>
           <div class="expanded-body">
-            <img [src]="v.imageUrl" [alt]="v.nom" class="expanded-image" />
-            <div class="expanded-info">
-              <p>Détails et informations à venir...</p>
+            <!-- Loading -->
+            <p *ngIf="universitesLoading()" class="unis-loading">Chargement des universités...</p>
+
+            <!-- Aucune université -->
+            <p *ngIf="!universitesLoading() && getUniversites(v.id).length === 0" class="unis-empty">
+              Aucune université trouvée pour cette ville.
+            </p>
+
+            <!-- Liste des universités -->
+            <div class="uni-card-wrap" *ngFor="let uni of getUniversites(v.id)">
+              <div class="uni-card"
+                   (click)="toggleUniversiteRestaurants(uni.id)"
+                   [class.open]="isUniversiteExpanded(uni.id)">
+              <img *ngIf="uni.url_image" 
+                   [src]="uni.url_image" 
+                   [alt]="uni.nom" 
+                   loading="lazy"
+                   class="uni-image" />
+              <div class="uni-placeholder" *ngIf="!uni.url_image">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
+                </svg>
+              </div>
+              <div class="uni-info">
+                <h4>
+                  <a *ngIf="uni.lien"
+                     [href]="uni.lien"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     class="uni-link"
+                     (click)="$event.stopPropagation()">{{ uni.nom }}</a>
+                  <span *ngIf="!uni.lien">{{ uni.nom }}</span>
+                </h4>
+                <span *ngIf="uni.nb_etu" class="uni-students">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="icon-small">
+                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                  </svg>
+                  {{ uni.nb_etu | number }} étudiants
+                </span>
+              </div>
+
+              <button class="uni-toggle-btn" type="button" [attr.aria-expanded]="isUniversiteExpanded(uni.id)">
+                {{ isUniversiteExpanded(uni.id) ? 'Masquer les restaurants' : 'Voir les restaurants' }}
+              </button>
+              </div>
+
+              <app-restaurants-universitaires
+                *ngIf="isUniversiteExpanded(uni.id)"
+                [universiteId]="uni.id">
+              </app-restaurants-universitaires>
             </div>
           </div>
         </div>

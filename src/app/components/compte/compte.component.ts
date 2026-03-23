@@ -146,7 +146,6 @@ export class CompteComponent implements OnInit {
       this.isLoading = true;
       const { email, password, rememberMe } = this.loginForm.value;
 
-<<<<<<< HEAD
       const { user, error } = await this.authService.signIn(email, password);
       this.isLoading = false;
 
@@ -165,28 +164,6 @@ export class CompteComponent implements OnInit {
       this.showLoginForm = false;
       this.checkIfConnected();
       setTimeout(() => this.close(), 1500);
-=======
-      this.dataService.login(email, password).subscribe({
-        next: (response) => {
-          this.isLoading = false;
-          localStorage.setItem('user', JSON.stringify(response.user));
-          if (rememberMe) {
-            localStorage.setItem('rememberMe', 'true');
-          }
-          this.successMessage = 'Connexion réussie !';
-          this.errorMessage = '';
-          this.loginForm.reset();
-          this.showLoginForm = false;
-          // Forcer la vérification de la connexion
-          this.checkIfConnected();
-        },
-        error: (err) => {
-          this.isLoading = false;
-          this.errorMessage = err.error?.error || 'Erreur lors de la connexion';
-          console.error('Login error:', err);
-        }
-      });
->>>>>>> a16f06795561eb4ec7c0d66cfabdfc9414a3335c
     }
   }
 

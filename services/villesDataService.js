@@ -31,6 +31,10 @@ const API_ESR_URL = 'https://data.enseignementsup-recherche.gouv.fr/api/explore/
 /** Open-Meteo Geocoding API */
 const OPENMETEO_GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 
+/** Wikidata API */
+const WIKIDATA_API_URL = 'https://www.wikidata.org/w/api.php';
+const WIKIDATA_SPARQL_URL = 'https://query.wikidata.org/sparql';
+
 /** COG API pour codes INSEE */
 const COG_API_URL = 'http://api.cog.fr/commune/like/';
 
@@ -140,6 +144,97 @@ async function fetchImageFromWikipedia(nomVille) {
 }
 
 // ====================================================
+// WIKIDATA - Population & Gentilé
+// ====================================================
+
+function parseWikidataPopulation(claims) {
+  const populationClaims = claims?.P1082;
+  if (!populationClaims?.length) return null;
+
+  for (const claim of populationClaims) {
+    const amount = claim?.mainsnak?.datavalue?.value?.amount;
+    if (!amount) continue;
+    const num = Number(String(amount).replace('+', ''));
+    if (Number.isFinite(num) && num > 0) {
+      return Math.round(num);
+    }
+  }
+  return null;
+}
+
+async function fetchWikidataEntityIdByInsee(codeInsee) {
+  if (!codeInsee) return null;
+
+  try {
+    const query = `
+      SELECT ?item WHERE {
+        ?item wdt:P374 "${codeInsee}" .
+      }
+      LIMIT 1
+    `;
+
+    const url = `${WIKIDATA_SPARQL_URL}?format=json&query=${encodeURIComponent(query)}`;
+    const result = await makeRequest(url, {
+      headers: {
+        'Accept': 'application/sparql-results+json',
+        'User-Agent': 'StudyMap/1.0 (contact: studymap-app)'
+      }
+    });
+
+    const itemUrl = result?.results?.bindings?.[0]?.item?.value;
+    if (!itemUrl) return null;
+
+    const match = itemUrl.match(/\/entity\/(Q\d+)$/);
+    return match?.[1] || null;
+  } catch (err) {
+    console.error(`WARN: Erreur SPARQL INSEE ${codeInsee}:`, err.message);
+    return null;
+  }
+}
+
+function pickBestWikidataCityEntity(searchResults) {
+  if (!Array.isArray(searchResults) || !searchResults.length) return null;
+
+  const scored = searchResults.map((item) => {
+    const description = (item.description || '').toLowerCase();
+    let score = 0;
+    if (description.includes('commune')) score += 3;
+    if (description.includes('ville')) score += 3;
+    if (description.includes('municipalité')) score += 2;
+    if (description.includes('france')) score += 2;
+    return { item, score };
+  }).sort((a, b) => b.score - a.score);
+
+  return scored[0]?.item || null;
+}
+
+async function fetchPopulationFromWikidata(nomVille, codeInsee = null) {
+  try {
+    let entityId = await fetchWikidataEntityIdByInsee(codeInsee);
+
+    if (!entityId) {
+      const searchUrl = `${WIKIDATA_API_URL}?action=wbsearchentities&format=json&language=fr&type=item&limit=8&search=${encodeURIComponent(nomVille)}`;
+      const searchResult = await makeRequest(searchUrl);
+      const entity = pickBestWikidataCityEntity(searchResult?.search);
+      entityId = entity?.id || null;
+    }
+
+    if (!entityId) return null;
+
+    const entityUrl = `https://www.wikidata.org/wiki/Special:EntityData/${entityId}.json`;
+    const entityResult = await makeRequest(entityUrl);
+    const claims = entityResult?.entities?.[entityId]?.claims;
+    if (!claims) return null;
+
+    const population = parseWikidataPopulation(claims);
+    return { nb_hab: population };
+  } catch (err) {
+    console.error(`WARN: Erreur Wikidata ${nomVille}:`, err.message);
+    return null;
+  }
+}
+
+// ====================================================
 // OPEN-METEO - Coordonnées
 // ====================================================
 
@@ -203,7 +298,9 @@ function parseVillesFromESR(results) {
       nom_ville: nomNettoye,
       code_insee: etab.com_code || null,
       latitude: etab.coordonnees?.lat || null,
-      longitude: etab.coordonnees?.lon || null
+      longitude: etab.coordonnees?.lon || null,
+      nb_hab: null,
+      nb_etu: null
     });
   });
 
@@ -279,6 +376,15 @@ async function enrichVille(ville) {
     await sleep(API_DELAY);
   }
 
+  // Population (Wikidata)
+  if (!ville.nb_hab) {
+    const wikidataMeta = await fetchPopulationFromWikidata(ville.nom_ville, ville.code_insee);
+    if (wikidataMeta && wikidataMeta.nb_hab) {
+      ville.nb_hab = wikidataMeta.nb_hab;
+    }
+    await sleep(API_DELAY);
+  }
+
   return ville;
 }
 
@@ -320,7 +426,9 @@ async function saveOrUpdateVilleInDB(ville) {
           url_image: ville.url_image || existing.url_image,
           latitude: ville.latitude || existing.latitude,
           longitude: ville.longitude || existing.longitude,
-          code_insee: ville.code_insee || existing.code_insee
+          code_insee: ville.code_insee || existing.code_insee,
+          nb_hab: ville.nb_hab || existing.nb_hab,
+          nb_etu: ville.nb_etu ?? existing.nb_etu
         })
         .eq('id', existing.id);
 
@@ -410,7 +518,9 @@ async function getOrFetchVille(nomVille) {
     code_insee: null,
     latitude: null,
     longitude: null,
-    url_image: null
+    url_image: null,
+    nb_hab: null,
+    nb_etu: null
   };
 
   nouvelleVille = await enrichVille(nouvelleVille);
@@ -440,7 +550,7 @@ async function syncVillesComplete() {
 
     // Vérifier si déjà en BD complète
     const villeDB = await getVilleFromDB(ville.nom_ville, ville.code_insee);
-    if (villeDB && villeDB.url_image && villeDB.latitude && villeDB.longitude) {
+    if (villeDB && villeDB.url_image && villeDB.latitude && villeDB.longitude && villeDB.nb_hab && villeDB.nb_etu !== null && villeDB.nb_etu !== undefined) {
       console.log(`✓ [${i + 1}/${villes.length}] ${ville.nom_ville} déjà OK`);
       villesEnrichies.push(villeDB);
       continue;
@@ -464,6 +574,25 @@ async function syncVillesComplete() {
       console.log(`\n⏳ Progression: ${i + 1}/${villes.length}\n`);
     }
   }
+
+  // Calculer nb_etu par ville (somme des nb_etu des universités)
+  console.log('\n📊 Calcul du nombre d\'étudiants par ville...');
+  const allVillesDB = await getAllVillesFromDB();
+  for (const ville of allVillesDB) {
+    const { data: unis, error } = await supabase
+      .from('universites')
+      .select('nb_etu')
+      .eq('ville_id', ville.id);
+
+    if (!error && unis) {
+      const totalEtu = unis.reduce((sum, u) => sum + (u.nb_etu || 0), 0);
+      await supabase
+        .from('villes')
+        .update({ nb_etu: totalEtu })
+        .eq('id', ville.id);
+    }
+  }
+  console.log(`✅ nb_etu mis à jour pour ${allVillesDB.length} villes`);
 
   console.log(`\n✅ SYNC complétée: ${villesEnrichies.length} villes sauvegardées\n`);
   return villesEnrichies;

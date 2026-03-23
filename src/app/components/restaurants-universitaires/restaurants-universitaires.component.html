@@ -1,0 +1,21 @@
+<div class="restau-panel">
+  <p *ngIf="isLoading()" class="restau-loading">Chargement des restaurants universitaires...</p>
+
+  <p *ngIf="!isLoading() && restaurants().length === 0" class="restau-empty">
+    Aucun restaurant universitaire trouvé pour cette université.
+  </p>
+
+  <div *ngIf="!isLoading() && restaurants().length > 0" class="restau-list">
+    <div class="restau-item" *ngFor="let restau of restaurants()">
+      <div class="restau-name">{{ restau.nom }}</div>
+      <a class="restau-address-link"
+         *ngIf="restau.adresse"
+         [href]="getGoogleAddressUrl(restau)"
+         target="_blank"
+         rel="noopener noreferrer"
+         title="Ouvrir dans Google Maps">
+        {{ restau.adresse }}
+      </a>
+    </div>
+  </div>
+</div>

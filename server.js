@@ -25,6 +25,14 @@ app.use(express.json());
 const villesRoutes = require('./routes/villes');
 app.use('/api', villesRoutes);
 
+// Routes universités
+const universitesRoutes = require('./routes/universites');
+app.use('/api', universitesRoutes);
+
+// Routes restaurants universitaires
+const restauUnivRoutes = require('./routes/restauUniv');
+app.use('/api', restauUnivRoutes);
+
 // ====================================================
 // HEALTH CHECK
 // ====================================================
@@ -66,6 +74,13 @@ Available routes:
   GET  /api/villes/:id         - Détail d'une ville
   GET  /api/villes/search/:nom - Cherche une ville (BD→API)
   POST /api/villes/sync        - Synchronise les villes
+  GET  /api/universites         - Liste des universités
+  GET  /api/universites/:id    - Détail d'une université
+  GET  /api/universites/ville/:villeId - Par ville
+  POST /api/universites/sync   - Synchro ESR + Wikidata
+  GET  /api/restau-univ         - Liste des restaurants
+  GET  /api/restau-univ/universite/:univId - Par université
+  POST /api/restau-univ/sync   - Synchro CROUS
 
 Quick start:
   1. POST /api/villes/sync      - Initialiser les villes

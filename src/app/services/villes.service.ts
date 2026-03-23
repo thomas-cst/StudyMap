@@ -9,12 +9,15 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map, of, catchError, tap } from 'rxjs';
 
 export interface Ville {
+  id: number;           // ID Supabase (ville_id)
   id_ville?: number;
   nom: string;
   code: string;        // Code INSEE
   imageUrl: string;    // URL image Wikipedia
   lat?: number;
   lng?: number;
+  nb_hab?: number | null;
+  nb_etu?: number | null;
 }
 
 /** Format Open-Meteo Geocoding */
@@ -37,7 +40,7 @@ export class VillesService {
   // Corrections manuelles depuis assets/city-coordinates-fixes.json
   private coordinatesFixes: { [key: string]: { lat: number; lng: number } } = {};
 
-  private cacheKey = 'villes_cache_v2';
+  private cacheKey = 'villes_cache_v5';
   private villesCache: Ville[] | null = null;
   private openMeteoBaseUrl = 'https://geocoding-api.open-meteo.com/v1/search';
 
@@ -92,11 +95,14 @@ export class VillesService {
   private loadVillesFromBackend(): Observable<Ville[]> {
     return this.http.get<any[]>('/api/villes').pipe(
       map(villes => villes.map(v => ({
+        id: v.id,
         nom: v.nom_ville,
         code: v.code_insee,
         imageUrl: this.toThumbnail(v.url_image),
         lat: v.latitude,
-        lng: v.longitude
+        lng: v.longitude,
+        nb_hab: v.nb_hab ?? null,
+        nb_etu: v.nb_etu ?? null
       })))
     );
   }
