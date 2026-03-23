@@ -1,8 +1,9 @@
+<!-- Popup modale de gestion du compte utilisateur -->
 <div id="modalCompte" class="FenetreCompte active">
     <div class="contenuFenetreCompte">
         <h3>Bienvenue !</h3>
         
-        <!-- Messages d'erreur et de succès -->
+        <!-- Messages de retour (succes ou erreur) -->
         <div *ngIf="successMessage" class="message success-message">
             {{ successMessage }}
         </div>
@@ -10,13 +11,13 @@
             {{ errorMessage }}
         </div>
 
-        <!-- Affichage si connecté -->
+        <!-- Affichage quand l'utilisateur est connecte -->
         <div *ngIf="isConnected" class="connected-content">
             <p>Connecté en tant que : <strong>{{ currentUser.email }}</strong></p>
             <button class="btn-logout" (click)="logout()">Se déconnecter</button>
         </div>
 
-        <!-- Affichage si non connecté -->
+        <!-- Affichage quand l'utilisateur n'est pas connecte -->
         <div *ngIf="!isConnected">
             <p>Connectez-vous pour sauvegarder vos favoris.</p>
             <div class="boutonsConnexion" *ngIf="!showSignupForm && !showLoginForm">

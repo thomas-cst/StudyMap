@@ -1,3 +1,13 @@
+/**
+ * Composant Compte - Popup modale de gestion du compte utilisateur
+ * 
+ * Fonctionnalites :
+ * - Formulaire d'inscription avec validation (email, mot de passe securise)
+ * - Formulaire de connexion avec option "rester connecte"
+ * - Connexion via Google OAuth
+ * - Deconnexion
+ * - Verification automatique de la session au chargement
+ */
 import { Component, EventEmitter, Output, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -12,18 +22,30 @@ import { AuthService } from '../../services/auth.service';
   imports: [ReactiveFormsModule, CommonModule, HttpClientModule]
 })
 export class CompteComponent implements OnInit {
+  /** Evenement emis pour fermer la popup depuis le composant parent */
   @Output() closed = new EventEmitter<void>();
 
+  /** Controle l'affichage du formulaire d'inscription */
   showSignupForm: boolean = false;
+  /** Controle l'affichage du formulaire de connexion */
   showLoginForm: boolean = false;
+  /** Indique si l'utilisateur est actuellement connecte */
   isConnected: boolean = false;
+  /** Donnees de l'utilisateur connecte (email, nom) */
   currentUser: any = null;
+  /** Message de succes affiche apres une action reussie */
   successMessage: string = '';
+  /** Message d'erreur affiche en cas de probleme */
   errorMessage: string = '';
+  /** Indicateur de chargement (pendant les appels API) */
   isLoading: boolean = false;
+  /** Formulaire reactif d'inscription avec validateurs */
   signupForm: FormGroup;
+  /** Formulaire reactif de connexion */
   loginForm: FormGroup;
-  private wasConnectedBefore: boolean = false; // Track initial state
+
+  /** Empêche l'affichage du message de succès au chargement si déjà connecté */
+  private wasConnectedBefore: boolean = false;
 
   constructor(private fb: FormBuilder, private authService: AuthService) {
     this.signupForm = this.fb.group({
@@ -67,8 +89,9 @@ export class CompteComponent implements OnInit {
     });
   }
 
+  /** Verifie l'etat de connexion : d'abord Supabase, puis localStorage en fallback */
   checkIfConnected() {
-    // Vérifier d'abord dans Supabase
+    // Verifier d'abord dans Supabase
     const supabaseUser = this.authService.getCurrentUser();
     if (supabaseUser) {
       this.currentUser = { email: supabaseUser.email, name: supabaseUser.email?.split('@')[0] };
@@ -91,6 +114,7 @@ export class CompteComponent implements OnInit {
     }
   }
 
+  /** Validateur personnalise : verifie que les deux mots de passe correspondent */
   passwordMatchValidator(form: FormGroup): any {
     const password = form.get('password');
     const confirmPassword = form.get('confirmPassword');
@@ -101,23 +125,27 @@ export class CompteComponent implements OnInit {
     return null;
   }
 
+  /** Affiche ou masque le formulaire d'inscription (et masque la connexion) */
   toggleSignupForm() {
     this.showSignupForm = !this.showSignupForm;
     this.showLoginForm = false;
     this.clearMessages();
   }
 
+  /** Affiche ou masque le formulaire de connexion (et masque l'inscription) */
   toggleLoginForm() {
     this.showLoginForm = !this.showLoginForm;
     this.showSignupForm = false;
     this.clearMessages();
   }
 
+  /** Efface les messages de succes et d'erreur */
   clearMessages() {
     this.successMessage = '';
     this.errorMessage = '';
   }
 
+  /** Soumission du formulaire d'inscription */
   async onSignup() {
     if (this.signupForm.valid) {
       this.isLoading = true;
@@ -140,7 +168,7 @@ export class CompteComponent implements OnInit {
       setTimeout(() => this.close(), 1500);
     }
   }
-
+  /** Soumission du formulaire de connexion */
   async onLogin() {
     if (this.loginForm.valid) {
       this.isLoading = true;
@@ -167,6 +195,7 @@ export class CompteComponent implements OnInit {
     }
   }
 
+  /** Déconnexion de l'utilisateur (localStorage + Supabase) */
   logout() {
     localStorage.removeItem('user');
     this.isLoading = true;
@@ -187,6 +216,7 @@ export class CompteComponent implements OnInit {
     });
   }
 
+  /** Connexion via Google OAuth (redirige vers Google) */
   onGoogleLogin() {
     this.isLoading = true;
     this.clearMessages();
@@ -200,6 +230,7 @@ export class CompteComponent implements OnInit {
     });
   }
 
+  /** Ferme la popup en emettant l'evenement vers le parent */
   close(): void {
     this.closed.emit();
   }

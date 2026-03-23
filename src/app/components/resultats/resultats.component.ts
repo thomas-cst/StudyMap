@@ -1,4 +1,15 @@
-import { Component, Input, computed, signal, inject, effect, OnChanges, SimpleChanges, OnInit, DestroyRef } from '@angular/core';
+/**
+ * Composant Resultats - Grille des villes avec filtrage, favoris et zoom carte
+ * 
+ * Fonctionnalites :
+ * - Chargement des villes depuis le backend
+ * - Filtrage par recherche textuelle, bord de mer, montagne, geolocalisation
+ * - Tri par villes recemment consultees
+ * - Expansion d'une carte ville pour voir les details et zoomer sur la carte
+ * - Gestion des favoris (ajout/suppression)
+ * - Calcul de distance (formule de Haversine) pour le tri par proximite
+ */
+import { Component, input,Input, computed, signal, inject, effect, OnChanges, SimpleChanges, OnInit, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FavorisService } from '../../services/favoris.service';
@@ -6,7 +17,12 @@ import { VillesService, Ville } from '../../services/villes.service';
 import { UniversitesService, Universite } from '../../services/universites.service';
 import { MapSyncService } from '../../services/map-sync.service';
 import { SearchSyncService } from '../../services/search-sync.service';
+<<<<<<< HEAD
 import { RestaurantsUniversitairesComponent } from '../restaurants-universitaires/restaurants-universitaires.component';
+=======
+import { AuthService } from '../../services/auth.service';
+import { AuthPopupService } from '../../services/auth-popup.service';
+>>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
 
 /**
  * Composant résultats - Grille des villes avec filtrage, favoris et zoom carte
@@ -19,39 +35,81 @@ import { RestaurantsUniversitairesComponent } from '../restaurants-universitaire
   styleUrl: './resultats.component.scss'
 })
 export class ResultatsComponent implements OnChanges, OnInit {
+  /** Terme de recherche recu depuis le composant parent */
   @Input() query = '';
 
+  /** Signal local pour suivre la query de maniere reactive */
   private querySignal = signal('');
+
+  /** Filtre actuellement selectionne (recu du parent via input) */
+  filtreActuel = input<string>('');
+
+  /** Service de gestion des favoris */
   private favorisService = inject(FavorisService);
+  /** Service pour recuperer les villes et leurs coordonnees */
   private villesService = inject(VillesService);
+<<<<<<< HEAD
   private universitesService = inject(UniversitesService);
+=======
+  /** Service de synchronisation avec la carte (zoom, villes recentes) */
+>>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
   private mapSyncService = inject(MapSyncService);
+  /** Service de synchronisation de la barre de recherche */
   private searchSyncService = inject(SearchSyncService);
+  /** Service d'authentification pour verifier la connexion */
+  private authService = inject(AuthService);
+  /** Service pour demander l'ouverture de la popup de connexion */
+  private authPopupService = inject(AuthPopupService);
+  /** Reference de destruction pour nettoyer les subscriptions RxJS */
   private destroyRef = inject(DestroyRef);
 
+  /** Liste de toutes les villes chargees depuis le backend */
   private villes = signal<Ville[]>([]);
+  /** Indicateur de chargement des villes */
   isLoading = signal(true);
+  /** Acces en lecture seule aux favoris du service */
   get favoris() {
     return this.favorisService.favoris;
   }
 
+  /** Ville actuellement agrandie dans la grille */
   expandedVille = signal<Ville | null>(null);
+<<<<<<< HEAD
   expandedUniversiteId = signal<number | null>(null);
   universitesMap = signal<{ [villeId: number]: Universite[] }>({});
   universitesLoading = signal(false);
+=======
+  /** Derniere ville zoomee pour eviter les appels API dupliques */
+>>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
   private lastZoomedVille = signal<string | null>(null);
+  /** Indique si la selection est manuelle (clic) ou automatique (recherche) */
   private isManualSelection = signal<boolean>(false);
 
+  /** Charge les villes depuis le backend au demarrage */
   ngOnInit() {
     this.loadVilles();
   }
 
+  /** Recupere les villes via le service et met en cache les coordonnees manquantes */
   private loadVilles() {
     this.isLoading.set(true);
     this.villesService.getVilles().subscribe({
       next: (villes) => {
         this.villes.set(villes);
         this.isLoading.set(false);
+
+        villes.forEach(ville => {
+          if (ville.lat === undefined) {
+            this.villesService.getCoordinatesForVille(ville.nom)
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe(coords => {
+                this.villes.update(currentVilles => 
+                  currentVilles.map(v => v.nom === ville.nom ? { ...v, lat: coords.lat, lng: coords.lng } : v)
+                );
+              });
+          }
+        });
+
       },
       error: (err) => {
         console.error('ERROR: Chargement des villes échoué:', err);
@@ -91,7 +149,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
     });
   }
 
-  /** Sync Input query avec le signal local */
+  /** Synchronise le changement d'Input query avec le signal local */
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['query']) {
       this.querySignal.set(this.query);
@@ -99,57 +157,84 @@ export class ResultatsComponent implements OnChanges, OnInit {
     }
   }
 
-  /** Toutes les villes, triées par vues récentes */
-  filtered = computed(() => {
-    const all = this.villes();
-    const recent = this.mapSyncService.recentlyViewed();
-    
-    if (recent.length === 0) return all;
-    
-    // Créer un Map pour lookup O(1)
-    const recentMap = new Map(recent.map((code, i) => [code, i]));
-    
-    // Trier sans muter l'array original
-    return [...all].sort((a, b) => {
-      const aIndex = recentMap.get(a.code);
-      const bIndex = recentMap.get(b.code);
+  /** Liste filtree et triee des villes selon la recherche et les filtres actifs */
+ filtered = computed(() => {
+    let list = [...this.villes()];
+    const currentFiltre = this.filtreActuel();
+    const q = this.querySignal().trim().toLowerCase();
+
+    // Filtrer par nom (Barre de recherche)
+    if (q) {
+      list = list.filter(v => v.nom.toLowerCase().includes(q));
+    }
+
+    // Filtre "Bord de mer"
+    if (currentFiltre === 'mer') {
+      return list.filter(v => this.villesService.isVilleMer(v.nom));
+    }
+ 
+    // Filtre "Montagne"
+    if (currentFiltre === 'montagne') {
+      return list.filter(v => this.villesService.isVilleMontagne(v.nom));
+    }
+
+    // Filtre "Autour de moi" 
+   if (currentFiltre.startsWith('geo:')) {
+      const [lat, lng] = currentFiltre.replace('geo:', '').split(',').map(Number);
       
-      const aIsRecent = aIndex !== undefined;
-      const bIsRecent = bIndex !== undefined;
-      
-      if (aIsRecent && !bIsRecent) return -1;
-      if (!aIsRecent && bIsRecent) return 1;
-      
-      // Si les deux sont récentes, garder l'ordre de recentlyViewed
-      if (aIsRecent && bIsRecent) {
-        return aIndex! - bIndex!;
+      // On ne trie que les villes qui ont des coordonnées valides
+      return list
+        .filter(v => v.lat !== undefined && v.lng !== undefined)
+        .sort((a, b) => {
+          const distA = this.getDistance(lat, lng, a.lat!, a.lng!);
+          const distB = this.getDistance(lat, lng, b.lat!, b.lng!);
+          return distA - distB;
+        });
+    }
+    // Si on a pas accès aux données de géoloc -> trier par consultés récemment
+    else {
+      const recent = this.mapSyncService.recentlyViewed();
+      if (recent.length > 0) {
+        const recentMap = new Map(recent.map((v, i) => [v, i]));
+        list.sort((a, b) => {
+          const aIndex = recentMap.get(a.nom);
+          const bIndex = recentMap.get(b.nom);
+          if (aIndex !== undefined && bIndex === undefined) return -1;
+          if (aIndex === undefined && bIndex !== undefined) return 1;
+          if (aIndex !== undefined && bIndex !== undefined) return aIndex - bIndex;
+          return 0;
+        });
       }
-      
-      return 0;
-    });
+    }
+
+    return list;
   });
 
-  /** Villes en favoris uniquement */
+  /** Liste des villes qui sont en favoris */
   favorisFiltered = computed(() => {
     return this.villes().filter(v => this.favorisService.isFavoris(v.nom));
   });
 
-  /** toggle une ville en favoris */
+  /** Ajoute ou retire une ville des favoris (ouvre la popup login si non connecte) */
   toggleFavoris(ville: Ville) {
+    if (!this.authService.isAuthenticated()) {
+      this.authPopupService.requestLogin();
+      return;
+    }
     this.favorisService.toggleFavoris(ville);
   }
 
-  /** check si une ville est en favoris */
+  /** Verifie si une ville est dans la liste des favoris */
   isFavoris(nom: string): boolean {
     return this.favorisService.isFavoris(nom);
   }
 
-  /** encode URI pour les URLs */
+  /** Encode une chaine pour utilisation dans les URLs */
   encodeURIComponent(str: string): string {
     return encodeURIComponent(str);
   }
 
-  /** Expand + zoom sur la carte */
+  /** Agrandit la carte ville, scrolle vers le haut et zoome sur la carte Leaflet */
   private expandAndZoom(ville: Ville) {
     setTimeout(() => {
       const el = document.querySelector('.resultats');
@@ -167,12 +252,16 @@ export class ResultatsComponent implements OnChanges, OnInit {
       this.villesService.getCoordinatesForVille(ville.nom, ville.code)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(coords => {
+          console.log(`🗺️ Zoom vers ${ville.nom}:`, coords);
+          this.villes.update(villes => 
+            villes.map(v => v.nom === ville.nom ? { ...v, lat: coords.lat, lng: coords.lng } : v)
+          );
           this.mapSyncService.zoomToVille(ville.nom, coords.lat, coords.lng);
         });
     }
   }
 
-  /** toggle l'expansion d'une ville */
+  /** Ouvre ou ferme les details d'une ville dans la grille */
   toggleExpanded(ville: Ville) {
     if (this.expandedVille()?.code === ville.code) {
       // Fermer la ville
@@ -193,6 +282,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
     }
   }
 
+<<<<<<< HEAD
   /** Charge les universités d'une ville */
   private loadUniversites(ville: Ville) {
     if (this.universitesMap()[ville.id]) return;
@@ -214,10 +304,14 @@ export class ResultatsComponent implements OnChanges, OnInit {
   }
 
   /** check si une ville est agrandie */
+=======
+  /** Verifie si une ville est actuellement agrandie */
+>>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
   isExpanded(ville: Ville): boolean {
     return this.expandedVille()?.code === ville.code;
   }
 
+<<<<<<< HEAD
   toggleUniversiteRestaurants(universiteId: number): void {
     this.expandedUniversiteId.set(
       this.expandedUniversiteId() === universiteId ? null : universiteId
@@ -226,5 +320,17 @@ export class ResultatsComponent implements OnChanges, OnInit {
 
   isUniversiteExpanded(universiteId: number): boolean {
     return this.expandedUniversiteId() === universiteId;
+=======
+  /** Calcule la distance en km entre deux coordonnees GPS (formule de Haversine) */
+  private getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+      const R = 6371; // Rayon de la terre
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+>>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
   }
 }

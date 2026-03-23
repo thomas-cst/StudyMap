@@ -1,3 +1,12 @@
+/**
+ * Composant FavorisDisplay - Affiche la liste des villes favorites de l'utilisateur
+ * 
+ * Fonctionnalites :
+ * - Affichage des favoris avec filtrage par recherche
+ * - Tri par villes recemment consultees
+ * - Expansion d'une ville pour voir ses details et zoomer sur la carte
+ * - Gestion des favoris (ajout/suppression)
+ */
 import { Component, Input, computed, signal, inject, effect, OnChanges, SimpleChanges, OnInit, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -6,7 +15,12 @@ import { VillesService, Ville } from '../../services/villes.service';
 import { UniversitesService, Universite } from '../../services/universites.service';
 import { MapSyncService } from '../../services/map-sync.service';
 import { SearchSyncService } from '../../services/search-sync.service';
+<<<<<<< HEAD
 import { RestaurantsUniversitairesComponent } from '../restaurants-universitaires/restaurants-universitaires.component';
+=======
+import { AuthService } from '../../services/auth.service';
+import { AuthPopupService } from '../../services/auth-popup.service';
+>>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
 
 @Component({
   selector: 'app-favoris-display', 
@@ -16,36 +30,55 @@ import { RestaurantsUniversitairesComponent } from '../restaurants-universitaire
   styleUrl: './favoris-display.component.scss'
 })
 export class FavorisDisplayComponent implements OnChanges, OnInit {
+  /** Terme de recherche recu depuis le composant parent */
   @Input() query = '';
 
-  /** signal local pour tracker la query */
+  /** Signal local qui synchronise la valeur de l'Input query pour une utilisation reactive */
   private querySignal = signal('');
 
+<<<<<<< HEAD
   private favorisService = inject(FavorisService);
   private villesService = inject(VillesService);
   private mapSyncService = inject(MapSyncService);
   private searchSyncService = inject(SearchSyncService);
   private universitesService = inject(UniversitesService);
+=======
+  /** Filtre actuellement selectionne (recu du composant parent) */
+  @Input() filtreActuel = '';
+>>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
 
-  /** destroy ref pour nettoyer les subscriptions */
+  /** Service de gestion des favoris (ajout, suppression, liste) */
+  private favorisService = inject(FavorisService);
+  /** Service pour recuperer les coordonnees des villes */
+  private villesService = inject(VillesService);
+  /** Service de synchronisation avec le composant carte (zoom, villes recentes) */
+  private mapSyncService = inject(MapSyncService);
+  /** Service de synchronisation de la barre de recherche entre composants */
+  private searchSyncService = inject(SearchSyncService);
+  /** Service d'authentification pour verifier la connexion */
+  private authService = inject(AuthService);
+  /** Service pour demander l'ouverture de la popup de connexion */
+  private authPopupService = inject(AuthPopupService);
+
+  /** Reference de destruction pour nettoyer automatiquement les subscriptions RxJS */
   private destroyRef = inject(DestroyRef);
 
-  /** données des villes chargées dynamiquement */
+  /** Liste des villes favorites, recuperee dynamiquement depuis le service */
   villes = computed(() => this.favorisService.favoris());
 
-  /** loading state */
+  /** Indicateur de chargement : vrai si aucune ville n'est encore chargee */
   isLoading = computed(() => this.villes().length === 0);
 
-  /** ville agrandie dans la grille */
+  /** Ville actuellement agrandie dans la grille (affichage des details) */
   expandedVille = signal<Ville | null>(null);
   expandedUniversiteId = signal<number | null>(null);
   universitesMap = signal<{ [villeId: number]: Universite[] }>({});
   universitesLoading = signal(false);
 
-  /** track la dernière ville zoomée pour éviter les appels API dupliqués */
+  /** Derniere ville zoomee sur la carte, pour eviter les appels API dupliques */
   private lastZoomedVille = signal<string | null>(null);
 
-  /** track si la dernière sélection était manuelle (clic) ou via la recherche */
+  /** Indique si la derniere selection etait manuelle (clic) ou via la barre de recherche */
   private isManualSelection = signal<boolean>(false);
 
   ngOnInit() {
@@ -61,7 +94,7 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
     }
   }
 
-  /** affiche les favoris filtrés par query */
+  /** Favoris filtres par le terme de recherche et tries par consultation recente */
   filtered = computed(() => {
     const villes = this.villes();
     const q = this.querySignal().trim().toLowerCase();
@@ -98,20 +131,24 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
     });
   });
 
-  /** toggle une ville en favoris */
+  /** Ajoute ou retire une ville des favoris (ouvre la popup login si non connecte) */
   toggleFavoris(ville: Ville) {
+    if (!this.authService.isAuthenticated()) {
+      this.authPopupService.requestLogin();
+      return;
+    }
     this.favorisService.toggleFavoris(ville);
   }
 
-  /** check si une ville est en favoris */
+  /** Verifie si une ville est dans la liste des favoris */
   isFavoris(nom: string): boolean {
     return this.favorisService.isFavoris(nom);
   }
 
-  /** Méthode commune pour expand + zoom */
+  /** Agrandit la carte d'une ville et zoome sur sa position sur la carte */
   private expandAndZoom(ville: Ville) {
-    // Remonter vers la liste des favoris (chercher l'élément avec classe 'favoris-display')
-    // Utiliser un délai pour laisser le DOM se mettre à jour
+    // Remonter le scroll vers le haut de la liste des favoris
+    // Un delai est necessaire pour laisser le DOM se mettre a jour
     setTimeout(() => {
       const favorisElement = document.querySelector('.favoris-display');
       if (favorisElement) {
@@ -139,7 +176,7 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
     }
   }
 
-  /** toggle l'expansion d'une ville */
+  /** Ouvre ou ferme les details d'une ville dans la grille */
   toggleExpanded(ville: Ville) {
     if (this.expandedVille()?.code === ville.code) {
       // Fermer la ville
@@ -160,6 +197,7 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
     }
   }
 
+<<<<<<< HEAD
   /** Charge les universités d'une ville */
   private loadUniversites(ville: Ville) {
     if (this.universitesMap()[ville.id]) return;
@@ -181,10 +219,14 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   }
 
   /** check si une ville est agrandie */
+=======
+  /** Verifie si une ville est actuellement agrandie */
+>>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
   isExpanded(ville: Ville): boolean {
     return this.expandedVille()?.code === ville.code;
   }
 
+<<<<<<< HEAD
   toggleUniversiteRestaurants(universiteId: number): void {
     this.expandedUniversiteId.set(
       this.expandedUniversiteId() === universiteId ? null : universiteId
@@ -196,6 +238,9 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   }
 
   /** encode URI pour les URLs */
+=======
+  /** Encode une chaine de caracteres pour une utilisation dans les URLs */
+>>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
   encodeURIComponent(str: string): string {
     return encodeURIComponent(str);
   }
