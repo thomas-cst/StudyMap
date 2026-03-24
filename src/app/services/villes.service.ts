@@ -64,13 +64,7 @@ export class VillesService {
   /** Corrections manuelles de coordonnees chargees depuis un fichier JSON */
   private coordinatesFixes: { [key: string]: { lat: number; lng: number } } = {};
 
-<<<<<<< HEAD
   private cacheKey = 'villes_cache_v5';
-=======
-  /** Cle utilisee pour stocker les villes dans le localStorage */
-  private cacheKey = 'villes_cache_v2';
-  /** Cache memoire des villes (evite de relire le localStorage) */
->>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
   private villesCache: Ville[] | null = null;
   /** URL de base de l'API de geocodage Open-Meteo */
   private openMeteoBaseUrl = 'https://geocoding-api.open-meteo.com/v1/search';

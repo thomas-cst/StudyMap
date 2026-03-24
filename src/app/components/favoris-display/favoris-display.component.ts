@@ -15,12 +15,9 @@ import { VillesService, Ville } from '../../services/villes.service';
 import { UniversitesService, Universite } from '../../services/universites.service';
 import { MapSyncService } from '../../services/map-sync.service';
 import { SearchSyncService } from '../../services/search-sync.service';
-<<<<<<< HEAD
 import { RestaurantsUniversitairesComponent } from '../restaurants-universitaires/restaurants-universitaires.component';
-=======
 import { AuthService } from '../../services/auth.service';
 import { AuthPopupService } from '../../services/auth-popup.service';
->>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
 
 @Component({
   selector: 'app-favoris-display', 
@@ -36,16 +33,9 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   /** Signal local qui synchronise la valeur de l'Input query pour une utilisation reactive */
   private querySignal = signal('');
 
-<<<<<<< HEAD
-  private favorisService = inject(FavorisService);
-  private villesService = inject(VillesService);
-  private mapSyncService = inject(MapSyncService);
-  private searchSyncService = inject(SearchSyncService);
   private universitesService = inject(UniversitesService);
-=======
   /** Filtre actuellement selectionne (recu du composant parent) */
   @Input() filtreActuel = '';
->>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
 
   /** Service de gestion des favoris (ajout, suppression, liste) */
   private favorisService = inject(FavorisService);
@@ -197,7 +187,6 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
     }
   }
 
-<<<<<<< HEAD
   /** Charge les universités d'une ville */
   private loadUniversites(ville: Ville) {
     if (this.universitesMap()[ville.id]) return;
@@ -219,14 +208,10 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   }
 
   /** check si une ville est agrandie */
-=======
-  /** Verifie si une ville est actuellement agrandie */
->>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
   isExpanded(ville: Ville): boolean {
     return this.expandedVille()?.code === ville.code;
   }
 
-<<<<<<< HEAD
   toggleUniversiteRestaurants(universiteId: number): void {
     this.expandedUniversiteId.set(
       this.expandedUniversiteId() === universiteId ? null : universiteId
@@ -238,9 +223,6 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   }
 
   /** encode URI pour les URLs */
-=======
-  /** Encode une chaine de caracteres pour une utilisation dans les URLs */
->>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
   encodeURIComponent(str: string): string {
     return encodeURIComponent(str);
   }
