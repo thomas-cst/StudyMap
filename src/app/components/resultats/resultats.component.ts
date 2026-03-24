@@ -10,6 +10,8 @@
  * - Calcul de distance (formule de Haversine) pour le tri par proximite
  */
 import { Component, input,Input, computed, signal, inject, effect, OnChanges, SimpleChanges, OnInit, DestroyRef } from '@angular/core';
+import { UserLocationService, UserLocation } from '../../services/user-location.service';
+import { ItineraireService } from '../../services/itineraire.service';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FavorisService } from '../../services/favoris.service';
@@ -65,6 +67,16 @@ export class ResultatsComponent implements OnChanges, OnInit {
 
   /** Ville actuellement agrandie dans la grille */
   expandedVille = signal<Ville | null>(null);
+
+  /** Position géolocalisée de l'utilisateur (null si refusée) */
+  userLocation = signal<UserLocation | null>(null);
+  geoError = signal<string | null>(null);
+  private userLocationService = inject(UserLocationService);
+  private itineraireService = inject(ItineraireService);
+    /** Résultat du calcul d'itinéraire (distance km, durée min) */
+    itineraire = signal<{ distance: number|null, duration: number|null } | null>(null);
+    itineraireLoading = signal(false);
+    itineraireError = signal<string | null>(null);
   /** Derniere ville zoomee pour eviter les appels API dupliques */
   private lastZoomedVille = signal<string | null>(null);
   /** Indique si la selection est manuelle (clic) ou automatique (recherche) */
@@ -73,6 +85,16 @@ export class ResultatsComponent implements OnChanges, OnInit {
   /** Charge les villes depuis le backend au demarrage */
   ngOnInit() {
     this.loadVilles();
+    // S'abonner à la position utilisateur mutualisée
+    this.userLocationService.location$.subscribe(loc => this.userLocation.set(loc));
+    this.userLocationService.error$.subscribe(err => this.geoError.set(err));
+    // Demande la localisation au premier chargement du site
+    this.userLocationService.requestLocation();
+  }
+
+  /** Relance la demande de localisation utilisateur (ex: clic sur "autour de moi" ou détail ville) */
+  requestUserLocation(force = true) {
+    this.userLocationService.requestLocation(force);
   }
 
   /** Recupere les villes via le service et met en cache les coordonnees manquantes */
@@ -253,6 +275,8 @@ export class ResultatsComponent implements OnChanges, OnInit {
       this.isManualSelection.set(false);
       this.querySignal.set(''); // Vider le signal local
       this.searchSyncService.clearSearch(); // Demander au parent de vider l'input
+      this.itineraire.set(null);
+      this.itineraireError.set(null);
     } else {
       // Ouvrir une nouvelle ville
       this.expandedVille.set(ville);
@@ -260,7 +284,29 @@ export class ResultatsComponent implements OnChanges, OnInit {
       this.isManualSelection.set(true); // Blocker la recherche d'override la sélection
       this.querySignal.set(''); // Vider le buffer recherche
       this.expandAndZoom(ville);
+      this.loadItineraire(ville);
     }
+  }
+
+  /** Charge l'itinéraire voiture entre la position utilisateur et la ville */
+  private loadItineraire(ville: Ville) {
+    this.itineraire.set(null);
+    this.itineraireError.set(null);
+    if (!this.userLocation() || ville.lat === undefined || ville.lng === undefined) {
+      return;
+    }
+    this.itineraireLoading.set(true);
+    this.itineraireService.getItineraire(this.userLocation()!, { lat: ville.lat, lng: ville.lng })
+      .subscribe({
+        next: (res) => {
+          this.itineraire.set(res);
+          this.itineraireLoading.set(false);
+        },
+        error: (err) => {
+          this.itineraireError.set("Erreur lors du calcul de l'itinéraire.");
+          this.itineraireLoading.set(false);
+        }
+      });
   }
 
   /** Verifie si une ville est actuellement agrandie */

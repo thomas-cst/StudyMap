@@ -7,12 +7,17 @@
  * Gere aussi un slider double pour le budget min/max
  */
 import { Component, signal,input,output,inject, ElementRef, HostListener  } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { UserLocationService } from '../../services/user-location.service';
+    private userLocationService = inject(UserLocationService);
+    geoError = signal<string | null>(null);
 
 @Component({
 	selector: 'app-filtre',
 	templateUrl: './filtre.component.html',
 	styleUrls: ['./filtre.component.scss'],
 	standalone: true,
+    imports: [CommonModule],
 })
 export class FiltreComponent {
     /** Type de menu a afficher (determine les options de filtre disponibles) */
@@ -31,6 +36,8 @@ export class FiltreComponent {
 
     /** Reference a l'element DOM du composant (pour detecter les clics exterieurs) */
     private elementRef = inject(ElementRef);
+geoError: any;
+userLocationService: any;
 
     /** Ferme le menu si l'utilisateur clique en dehors du composant */
     @HostListener('document:click', ['$event'])
@@ -51,23 +58,19 @@ export class FiltreComponent {
         const value = input.value;
 
         if (value === 'itineraire') {
-            // On demande la position au navigateur
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    // On envoie les coordonnées au parent
-                    this.onFiltreChange.emit(`geo:${lat},${lng}`);
-                },
-                (error) => {
-                    console.error("Erreur de géolocalisation", error);
-                    this.onFiltreChange.emit(value); 
+            // Utilise le service mutualisé
+            this.userLocationService.location$.subscribe(loc => {
+                if (loc) {
+                    this.onFiltreChange.emit(`geo:${loc.lat},${loc.lng}`);
                 }
-            );
+            }).unsubscribe();
+            this.userLocationService.error$.subscribe(err => {
+                this.geoError.set(err);
+            }).unsubscribe();
+            this.userLocationService.requestLocation(true);
         } else {
             this.onFiltreChange.emit(value);
         }
-        
     }
 
     /** Met a jour la valeur minimale du budget (empeche de depasser le max) */

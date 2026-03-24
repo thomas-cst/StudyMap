@@ -61,7 +61,28 @@
           <div class="expanded-body">
             <img [src]="v.imageUrl" [alt]="v.nom" class="expanded-image" />
             <div class="expanded-info">
-              <p>Détails et informations à venir...</p>
+              <!-- Affichage du message d'erreur de géolocalisation et bouton de relance -->
+              <ng-container *ngIf="geoError()">
+                <p class="geo-error">{{ geoError() }}</p>
+                <button (click)="requestUserLocation(true)" class="btn-relance-geo">Autoriser la géolocalisation</button>
+              </ng-container>
+              <!-- Affichage du trajet voiture si localisation OK -->
+              <ng-container *ngIf="!geoError()">
+                <ng-container *ngIf="itineraireLoading()">
+                  <p>Calcul du trajet...</p>
+                </ng-container>
+                <ng-container *ngIf="itineraireError()">
+                  <p class="itineraire-error">{{ itineraireError() }}</p>
+                </ng-container>
+                <ng-container *ngIf="itineraire() as itin">
+                  <p>
+                    🚗 <b>{{ itin.duration }}</b> min &nbsp;•&nbsp; <b>{{ itin.distance }}</b> km
+                  </p>
+                </ng-container>
+                <ng-container *ngIf="!itineraire() && !itineraireLoading() && !itineraireError()">
+                  <p>Activez la localisation pour voir le temps de trajet.</p>
+                </ng-container>
+              </ng-container>
             </div>
           </div>
         </div>
