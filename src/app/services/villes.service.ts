@@ -9,12 +9,15 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map, of, catchError, tap } from 'rxjs';
 
 export interface Ville {
+  id: number;           // ID Supabase (ville_id)
   id_ville?: number;
   nom: string;
   code: string;        // Code INSEE
   imageUrl: string;    // URL image Wikipedia
   lat?: number;
   lng?: number;
+  nb_hab?: number | null;
+  nb_etu?: number | null;
 }
 
 /** Format Open-Meteo Geocoding */
@@ -61,9 +64,13 @@ export class VillesService {
   /** Corrections manuelles de coordonnees chargees depuis un fichier JSON */
   private coordinatesFixes: { [key: string]: { lat: number; lng: number } } = {};
 
+<<<<<<< HEAD
+  private cacheKey = 'villes_cache_v5';
+=======
   /** Cle utilisee pour stocker les villes dans le localStorage */
   private cacheKey = 'villes_cache_v2';
   /** Cache memoire des villes (evite de relire le localStorage) */
+>>>>>>> 436a43c95ce687d4a47bbd8b8572664ff1399f0c
   private villesCache: Ville[] | null = null;
   /** URL de base de l'API de geocodage Open-Meteo */
   private openMeteoBaseUrl = 'https://geocoding-api.open-meteo.com/v1/search';
@@ -125,11 +132,14 @@ export class VillesService {
   private loadVillesFromBackend(): Observable<Ville[]> {
     return this.http.get<any[]>('/api/villes').pipe(
       map(villes => villes.map(v => ({
+        id: v.id,
         nom: v.nom_ville,
         code: v.code_insee,
         imageUrl: this.toThumbnail(v.url_image),
         lat: v.latitude,
-        lng: v.longitude
+        lng: v.longitude,
+        nb_hab: v.nb_hab ?? null,
+        nb_etu: v.nb_etu ?? null
       })))
     );
   }

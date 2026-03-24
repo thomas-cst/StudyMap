@@ -1,0 +1,45 @@
+.restau-panel {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid #d9e0e6;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.restau-loading,
+.restau-empty {
+  margin: 0;
+  color: #667788;
+  font-size: 0.9em;
+}
+
+.restau-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.restau-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #f6f8fa;
+}
+
+.restau-name {
+  color: #2F4156;
+  font-weight: 600;
+  font-size: 0.92em;
+}
+
+.restau-address-link {
+  display: inline-block;
+  margin-top: 2px;
+  color: #667788;
+  font-size: 0.86em;
+  text-decoration: none;
+}
+
+.restau-address-link:hover {
+  text-decoration: underline;
+  color: #2F4156;
+}

@@ -1,4 +1,4 @@
-  /** Cache mémoire des itinéraires déjà calculés (clé: userLat,userLng-villeLat,villeLng) */
+/** Cache mémoire des itinéraires déjà calculés (clé: userLat,userLng-villeLat,villeLng) */
 /**
  * Composant Resultats - Grille des villes avec filtrage, favoris et zoom carte
  * 
@@ -10,15 +10,17 @@
  * - Gestion des favoris (ajout/suppression)
  * - Calcul de distance (formule de Haversine) pour le tri par proximite
  */
-import { Component, input,Input, computed, signal, inject, effect, OnChanges, SimpleChanges, OnInit, DestroyRef } from '@angular/core';
+import { Component, input, Input, computed, signal, inject, effect, OnChanges, SimpleChanges, OnInit, DestroyRef } from '@angular/core';
 import { UserLocationService, UserLocation } from '../../services/user-location.service';
 import { ItineraireService } from '../../services/itineraire.service';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FavorisService } from '../../services/favoris.service';
 import { VillesService, Ville } from '../../services/villes.service';
+import { UniversitesService, Universite } from '../../services/universites.service';
 import { MapSyncService } from '../../services/map-sync.service';
 import { SearchSyncService } from '../../services/search-sync.service';
+import { RestaurantsUniversitairesComponent } from '../restaurants-universitaires/restaurants-universitaires.component';
 import { AuthService } from '../../services/auth.service';
 import { AuthPopupService } from '../../services/auth-popup.service';
 
@@ -26,9 +28,9 @@ import { AuthPopupService } from '../../services/auth-popup.service';
  * Composant résultats - Grille des villes avec filtrage, favoris et zoom carte
  */
 @Component({
-  selector: 'app-resultats', 
-  standalone: true,        
-  imports: [CommonModule],            
+  selector: 'app-resultats',
+  standalone: true,
+  imports: [CommonModule, RestaurantsUniversitairesComponent],
   templateUrl: './resultats.component.html',
   styleUrl: './resultats.component.scss'
 })
@@ -39,8 +41,8 @@ export class ResultatsComponent implements OnChanges, OnInit {
   /** Signal local pour suivre la query de maniere reactive */
   private querySignal = signal('');
 
+  /** Cache mémoire des itinéraires déjà calculés (clé: userLat,userLng-villeLat,villeLng) */
   private itineraireCache = new Map<string, { distance: number; duration: number }>();
-
 
   /** Filtre actuellement selectionne (recu du parent via input) */
   filtreActuel = input<string>('');
@@ -49,6 +51,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
   private favorisService = inject(FavorisService);
   /** Service pour recuperer les villes et leurs coordonnees */
   private villesService = inject(VillesService);
+  private universitesService = inject(UniversitesService);
   /** Service de synchronisation avec la carte (zoom, villes recentes) */
   private mapSyncService = inject(MapSyncService);
   /** Service de synchronisation de la barre de recherche */
@@ -77,10 +80,13 @@ export class ResultatsComponent implements OnChanges, OnInit {
   geoError = signal<string | null>(null);
   private userLocationService = inject(UserLocationService);
   private itineraireService = inject(ItineraireService);
-    /** Résultat du calcul d'itinéraire (distance km, durée min) */
-    itineraire = signal<{ distance: number|null, duration: number|null } | null>(null);
-    itineraireLoading = signal(false);
-    itineraireError = signal<string | null>(null);
+  /** Résultat du calcul d'itinéraire (distance km, durée min) */
+  itineraire = signal<{ distance: number | null, duration: number | null } | null>(null);
+  itineraireLoading = signal(false);
+  itineraireError = signal<string | null>(null);
+  expandedUniversiteId = signal<number | null>(null);
+  universitesMap = signal<{ [villeId: number]: Universite[] }>({});
+  universitesLoading = signal(false);
   /** Derniere ville zoomee pour eviter les appels API dupliques */
   private lastZoomedVille = signal<string | null>(null);
   /** Indique si la selection est manuelle (clic) ou automatique (recherche) */
@@ -114,13 +120,12 @@ export class ResultatsComponent implements OnChanges, OnInit {
             this.villesService.getCoordinatesForVille(ville.nom)
               .pipe(takeUntilDestroyed(this.destroyRef))
               .subscribe(coords => {
-                this.villes.update(currentVilles => 
+                this.villes.update(currentVilles =>
                   currentVilles.map(v => v.nom === ville.nom ? { ...v, lat: coords.lat, lng: coords.lng } : v)
                 );
               });
           }
         });
-
       },
       error: (err) => {
         console.error('ERROR: Chargement des villes échoué:', err);
@@ -135,18 +140,18 @@ export class ResultatsComponent implements OnChanges, OnInit {
     effect(() => {
       const q = this.querySignal().trim().toLowerCase();
       const isManual = this.isManualSelection();
-      
+
       // Si requête est vide et pas de sélection manuelle, fermer
       if (!q && !isManual) {
         this.expandedVille.set(null);
         return;
       }
-      
+
       // Si sélection manuelle ET la query change (changement de recherche), ignorer la recherche
       if (isManual && q) {
         return; // Garder la sélection manuelle, ignorer la recherche
       }
-      
+
       // Logique de recherche (seulement si pas de sélection manuelle)
       if (!isManual && q) {
         const matching = this.villes().find(v => v.nom.toLowerCase().includes(q));
@@ -154,6 +159,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
           this.expandedVille.set(matching);
           this.lastZoomedVille.set(matching.code);
           this.expandAndZoom(matching);
+          this.loadUniversites(matching);
         }
       }
     });
@@ -168,7 +174,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
   }
 
   /** Liste filtree et triee des villes selon la recherche et les filtres actifs */
- filtered = computed(() => {
+  filtered = computed(() => {
     let list = [...this.villes()];
     const currentFiltre = this.filtreActuel();
     const q = this.querySignal().trim().toLowerCase();
@@ -182,16 +188,16 @@ export class ResultatsComponent implements OnChanges, OnInit {
     if (currentFiltre === 'mer') {
       return list.filter(v => this.villesService.isVilleMer(v.nom));
     }
- 
+
     // Filtre "Montagne"
     if (currentFiltre === 'montagne') {
       return list.filter(v => this.villesService.isVilleMontagne(v.nom));
     }
 
-    // Filtre "Autour de moi" 
-   if (currentFiltre.startsWith('geo:')) {
+    // Filtre "Autour de moi"
+    if (currentFiltre.startsWith('geo:')) {
       const [lat, lng] = currentFiltre.replace('geo:', '').split(',').map(Number);
-      
+
       // On ne trie que les villes qui ont des coordonnées valides
       return list
         .filter(v => v.lat !== undefined && v.lng !== undefined)
@@ -251,10 +257,10 @@ export class ResultatsComponent implements OnChanges, OnInit {
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       else window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 100);
-    
+
     // Ajouter aux récemment consultées
     this.mapSyncService.addToRecentlyViewed(ville.code);
-    
+
     if (ville.lat !== undefined && ville.lng !== undefined) {
       this.mapSyncService.zoomToVille(ville.nom, ville.lat, ville.lng);
     } else {
@@ -263,7 +269,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(coords => {
           console.log(`🗺️ Zoom vers ${ville.nom}:`, coords);
-          this.villes.update(villes => 
+          this.villes.update(villes =>
             villes.map(v => v.nom === ville.nom ? { ...v, lat: coords.lat, lng: coords.lng } : v)
           );
           this.mapSyncService.zoomToVille(ville.nom, coords.lat, coords.lng);
@@ -276,6 +282,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
     if (this.expandedVille()?.code === ville.code) {
       // Fermer la ville
       this.expandedVille.set(null);
+      this.expandedUniversiteId.set(null);
       this.isManualSelection.set(false);
       this.querySignal.set(''); // Vider le signal local
       this.searchSyncService.clearSearch(); // Demander au parent de vider l'input
@@ -284,11 +291,13 @@ export class ResultatsComponent implements OnChanges, OnInit {
     } else {
       // Ouvrir une nouvelle ville
       this.expandedVille.set(ville);
+      this.expandedUniversiteId.set(null);
       this.lastZoomedVille.set(ville.code);
-      this.isManualSelection.set(true); // Blocker la recherche d'override la sélection
-      this.querySignal.set(''); // Vider le buffer recherche
+      this.isManualSelection.set(true);
+      this.querySignal.set('');
       this.expandAndZoom(ville);
       this.loadItineraire(ville);
+      this.loadUniversites(ville);
     }
   }
 
@@ -321,20 +330,50 @@ export class ResultatsComponent implements OnChanges, OnInit {
       });
   }
 
+  /** Charge les universités d'une ville */
+  private loadUniversites(ville: Ville) {
+    if (this.universitesMap()[ville.id]) return;
+    this.universitesLoading.set(true);
+    this.universitesService.getByVilleId(ville.id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (unis) => {
+          this.universitesMap.update(m => ({ ...m, [ville.id]: unis }));
+          this.universitesLoading.set(false);
+        },
+        error: () => this.universitesLoading.set(false)
+      });
+  }
+
+  /** Retourne les universités de la ville expanded */
+  getUniversites(villeId: number): Universite[] {
+    return this.universitesMap()[villeId] || [];
+  }
+
   /** Verifie si une ville est actuellement agrandie */
   isExpanded(ville: Ville): boolean {
     return this.expandedVille()?.code === ville.code;
   }
 
+  toggleUniversiteRestaurants(universiteId: number): void {
+    this.expandedUniversiteId.set(
+      this.expandedUniversiteId() === universiteId ? null : universiteId
+    );
+  }
+
+  isUniversiteExpanded(universiteId: number): boolean {
+    return this.expandedUniversiteId() === universiteId;
+  }
+
   /** Calcule la distance en km entre deux coordonnees GPS (formule de Haversine) */
   private getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-      const R = 6371; // Rayon de la terre
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
+    const R = 6371; // Rayon de la terre
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
   }
 }
