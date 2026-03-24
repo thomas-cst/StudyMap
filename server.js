@@ -29,6 +29,10 @@ app.use('/api', villesRoutes);
 const favorisRoutes = require('./routes/favoris');
 app.use('/api', favorisRoutes);
 
+// Routes travel time
+const travelTimeRoutes = require('./routes/travelTime');
+app.use('/api', travelTimeRoutes);
+
 // ====================================================
 // HEALTH CHECK
 // ====================================================

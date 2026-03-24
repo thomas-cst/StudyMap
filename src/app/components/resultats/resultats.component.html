@@ -75,10 +75,79 @@
                   <p class="itineraire-error">{{ itineraireError() }}</p>
                 </ng-container>
                 <ng-container *ngIf="itineraire() as itin">
-                  <p>
-                    🚗 <b>{{ itin.duration }}</b> min &nbsp;•&nbsp; <b>{{ itin.distance }}</b> km
-                  </p>
+                  <div class="itineraire-card">
+                    <div class="itineraire-row">
+                      <span class="itineraire-icon">🚗</span>
+                      <span class="itineraire-label">Trajet estimé :</span>
+                      <span class="itineraire-value">
+                        <ng-container *ngIf="itin?.duration as dur">
+    
+                          <ng-container *ngIf="dur >= 60; else minutesOnly">
+                              {{ (dur / 60) | number:'1.0-0' }} h
+                              <ng-container *ngIf="dur % 60 !== 0">
+                                  {{ (dur % 60) | number:'1.0-0' }} min
+                              </ng-container>
+                          </ng-container>
+
+                          <ng-template #minutesOnly>
+                              {{ dur }} min
+                          </ng-template>
+
+                      </ng-container>
+                        <ng-template #minutesOnly>{{ itin.duration }} min</ng-template>
+                      </span>
+                    </div>
+                    <div class="itineraire-row">
+                      <span class="itineraire-icon">📏</span>
+                      <span class="itineraire-label">Distance :</span>
+                      <span class="itineraire-value">{{ itin.distance | number:'1.1-1' }} km</span>
+                    </div>
+                    <div class="itineraire-row">
+                      <span class="itineraire-icon">🗺️</span>
+                      <a class="itineraire-link" target="_blank"
+                        [href]="'https://www.google.com/maps/dir/' + userLocation()?.lat + ',' + userLocation()?.lng + '/' + expandedVille()?.lat + ',' + expandedVille()?.lng"
+                        rel="noopener noreferrer"
+                      >Voir l’itinéraire sur Google Maps</a>
+                    </div>
+                  </div>
                 </ng-container>
+                <style>
+                .itineraire-card {
+                  background: #f7f7fa;
+                  border-radius: 10px;
+                  padding: 16px 14px 10px 14px;
+                  margin-top: 10px;
+                  box-shadow: 0 2px 8px #0001;
+                  font-size: 1.05em;
+                }
+                .itineraire-row {
+                  display: flex;
+                  align-items: center;
+                  margin-bottom: 8px;
+                }
+                .itineraire-icon {
+                  font-size: 1.3em;
+                  margin-right: 8px;
+                }
+                .itineraire-label {
+                  color: #555;
+                  margin-right: 8px;
+                  min-width: 90px;
+                }
+                .itineraire-value {
+                  font-weight: 600;
+                  color: #222;
+                }
+                .itineraire-link {
+                  color: #1976d2;
+                  text-decoration: underline;
+                  font-weight: 500;
+                  margin-left: 4px;
+                }
+                .itineraire-link:hover {
+                  color: #0d47a1;
+                }
+                </style>
                 <ng-container *ngIf="!itineraire() && !itineraireLoading() && !itineraireError()">
                   <p>Activez la localisation pour voir le temps de trajet.</p>
                 </ng-container>

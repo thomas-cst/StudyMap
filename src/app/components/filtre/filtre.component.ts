@@ -9,8 +9,7 @@
 import { Component, signal,input,output,inject, ElementRef, HostListener  } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserLocationService } from '../../services/user-location.service';
-    private userLocationService = inject(UserLocationService);
-    geoError = signal<string | null>(null);
+    
 
 @Component({
 	selector: 'app-filtre',
@@ -20,6 +19,10 @@ import { UserLocationService } from '../../services/user-location.service';
     imports: [CommonModule],
 })
 export class FiltreComponent {
+
+    public userLocationService = inject(UserLocationService);
+    public geoError = signal<string | null>(null);
+    
     /** Type de menu a afficher (determine les options de filtre disponibles) */
     menus = input<'accueil' | 'favoris' | 'classement'>('accueil');
 
@@ -36,8 +39,7 @@ export class FiltreComponent {
 
     /** Reference a l'element DOM du composant (pour detecter les clics exterieurs) */
     private elementRef = inject(ElementRef);
-geoError: any;
-userLocationService: any;
+
 
     /** Ferme le menu si l'utilisateur clique en dehors du composant */
     @HostListener('document:click', ['$event'])
@@ -59,12 +61,12 @@ userLocationService: any;
 
         if (value === 'itineraire') {
             // Utilise le service mutualisé
-            this.userLocationService.location$.subscribe(loc => {
+            this.userLocationService.location$.subscribe((loc: any) => {
                 if (loc) {
                     this.onFiltreChange.emit(`geo:${loc.lat},${loc.lng}`);
                 }
             }).unsubscribe();
-            this.userLocationService.error$.subscribe(err => {
+            this.userLocationService.error$.subscribe((err: any) => {
                 this.geoError.set(err);
             }).unsubscribe();
             this.userLocationService.requestLocation(true);

@@ -1,3 +1,4 @@
+  /** Cache mémoire des itinéraires déjà calculés (clé: userLat,userLng-villeLat,villeLng) */
 /**
  * Composant Resultats - Grille des villes avec filtrage, favoris et zoom carte
  * 
@@ -37,6 +38,9 @@ export class ResultatsComponent implements OnChanges, OnInit {
 
   /** Signal local pour suivre la query de maniere reactive */
   private querySignal = signal('');
+
+  private itineraireCache = new Map<string, { distance: number; duration: number }>();
+
 
   /** Filtre actuellement selectionne (recu du parent via input) */
   filtreActuel = input<string>('');
@@ -295,11 +299,19 @@ export class ResultatsComponent implements OnChanges, OnInit {
     if (!this.userLocation() || ville.lat === undefined || ville.lng === undefined) {
       return;
     }
+    const user = this.userLocation()!;
+    const cacheKey = `${user.lat},${user.lng}-${ville.lat},${ville.lng}`;
+    const cached = this.itineraireCache.get(cacheKey);
+    if (cached) {
+      this.itineraire.set(cached);
+      return;
+    }
     this.itineraireLoading.set(true);
-    this.itineraireService.getItineraire(this.userLocation()!, { lat: ville.lat, lng: ville.lng })
+    this.itineraireService.getItineraire(user, { lat: ville.lat, lng: ville.lng })
       .subscribe({
         next: (res) => {
           this.itineraire.set(res);
+          this.itineraireCache.set(cacheKey, res);
           this.itineraireLoading.set(false);
         },
         error: (err) => {
