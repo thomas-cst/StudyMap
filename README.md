@@ -119,7 +119,7 @@ npm start
 
 🔄 Peupler les données (Seeding)
 Une fois les serveurs lancés, vous pouvez remplir votre base de données automatiquement via un troisième terminal :
-Avancement dans le temrinal Backend.
+Avancement dans le terminal Backend, environ 3 minutes au total.
 
 ```bash
 # 1. Synchroniser les villes (Données de base)
