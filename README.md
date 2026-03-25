@@ -1,6 +1,11 @@
 🎓 StudyMap
 Le comparateur de villes intelligent pour étudiants. > Projet Universitaire - Licence 3 (IHM & Architectures logicielles)
 
+![Angular](https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white)
+![NodeJS](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-181818?style=for-the-badge&logo=supabase&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+
 StudyMap permet aux étudiants d'évaluer et de comparer les villes françaises selon des critères réels : loyers moyen, météo, vie nocturne, universités, transports et proximité géographique (mer/montagne).
 
 ✨ Fonctionnalités
@@ -52,14 +57,28 @@ Remplissez les valeurs dans src/environments/environment.ts et src/environments/
 
 3. Installation des dépendances
 
-Bash
+
 # Installation globale des outils
 npm install -g @angular/cli
 
 # Installation des dépendances projet
 npm install
 
-4. Lancement de l'application
+# 4 Configuration de la Base de Données (Supabase)
+
+L'application utilise **PostgreSQL** via Supabase. Pour initialiser votre base de données :
+
+1.  Rendez-vous sur votre [Dashboard Supabase](https://supabase.com/) > **SQL Editor**.
+2.  Créez une **"New Query"**.
+3.  Copiez le contenu du fichier [**database/schema.sql**](./database/schema.sql) de ce projet et collez-le dans l'éditeur.
+4.  Cliquez sur **Run**.
+
+### 🔄 Peupler les données
+Une fois les tables créées, utilisez nos scripts de synchronisation automatique (via Postman ou Curl) :
+* **Villes** : `POST http://localhost:3000/api/villes/sync`
+* **Universités** : `POST http://localhost:3000/api/universites/sync`
+
+5. Lancement de l'application
 
 Vous devez lancer deux terminaux séparés :
 
@@ -95,6 +114,12 @@ Zéro Clé sur Git : Ne poussez jamais vos fichiers .env ou environment.ts. Util
 
 Architecture : Le frontend communique exclusivement avec le backend Express. Le backend se charge de la liaison sécurisée avec Supabase.
 
+## 🛠️ Dépannage (FAQ)
+* **Erreur `Unregistered API key`** : Vérifiez que vos clés dans `.env` et `environment.ts` sont bien à jour et que vous avez redémarré les serveurs.
+* **Problème de CORS** : Assurez-vous que l'URL du frontend dans le `.env` du backend correspond exactement à celle de votre navigateur (généralement `http://localhost:4200`).
+* **Port 3000 déjà utilisé** : Vous pouvez changer le port dans le fichier `.env`.
+
+  
 👥 Auteurs (L3 Informatique)
 Noah Cabaret — noahcabaret0902@gmail.com
 
