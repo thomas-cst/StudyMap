@@ -64,7 +64,7 @@ npm install -g @angular/cli
 # Installation des dépendances projet
 npm install
 
-# 4 Configuration de la Base de Données (Supabase)
+# Configuration de la Base de Données (Supabase)
 
 L'application utilise **PostgreSQL** via Supabase. Pour initialiser votre base de données :
 
