@@ -1,88 +1,103 @@
-StudyMap
-Comparateur de villes pour étudiants
+🎓 StudyMap
+Le comparateur de villes intelligent pour étudiants. > Projet Universitaire - Licence 3 (IHM & Architectures logicielles)
 
-Description
-StudyMap est une application web destinée aux étudiants qui souhaitent comparer différentes villes pour leurs études. Elle permet d’évaluer et de comparer les villes françaises selon de nombreux critères : loyer, météo, événements sportifs et culturels, universités, bars, boîtes de nuit, proximité de la mer ou de la montagne, ensoleillement, transports, emploi, etc. L’objectif est d’aider les étudiants à choisir la ville la plus adaptée à leurs besoins et envies.
+StudyMap permet aux étudiants d'évaluer et de comparer les villes françaises selon des critères réels : loyers moyen, météo, vie nocturne, universités, transports et proximité géographique (mer/montagne).
 
-Fonctionnalités principales
-Comparaison multi-critères de villes (loyer, météo, vie nocturne, universités, etc.)
-Recherche et affichage des universités, restaurants universitaires, événements
-Calcul d’itinéraires et estimation du temps de trajet
-Gestion des favoris
-Authentification via Google (Supabase)
-Interface moderne et responsive
-Contexte du projet
-Projet universitaire de Licence 3 (IHM & Architectures logicielles)
+✨ Fonctionnalités
+📊 Comparaison Multi-critères : Analyse comparative des loyers, ensoleillement, et offre culturelle.
 
-Objectifs théoriques : fondamentaux du développement web, API, architectures, outils de conception
-Objectifs pratiques : conception complète d’une application web, intégration d’API externes, UI/UX, travail en groupe
-Auteurs
+🏫 Annuaire Académique : Recherche d'universités et de restaurants universitaires (CROUS).
+
+📍 Itinéraires : Calcul automatique du temps de trajet via OpenRouteService.
+
+⭐ Favoris : Sauvegarde des villes préférées sur un compte personnel.
+
+🔐 Auth Sécurisée : Connexion via Google OAuth propulsée par Supabase.
+
+📱 Responsive Design : Interface moderne adaptée aux mobiles et tablettes.
+
+🛠️ Stack Technique
+Frontend : Angular 17+
+
+Backend : Node.js & Express
+
+Base de données : PostgreSQL (via Supabase)
+
+APIs Externes : OpenRouteService (Cartographie), Data.gouv (Données ESR/CROUS)
+
+🚀 Installation et Démarrage
+1. Clonage du projet
+
+Bash
+git clone https://github.com/votre-compte/studymap.git
+cd studymap
+2. Configuration des environnements (Crucial) 🛡️
+
+Le projet utilise des fichiers modèles pour éviter la fuite de clés API.
+
+Côté Backend :
+
+Bash
+# Copier le modèle et remplir avec vos clés
+cp .env.example .env
+Éditez le .env et renseignez SUPABASE_URL, SUPABASE_KEY et ORS_API_KEY.
+
+Côté Frontend (Angular) :
+
+Bash
+# Créer le dossier environments si absent et copier le modèle
+mkdir -p src/environments
+cp src/environments/environment.template.ts src/environments/environment.ts
+Remplissez les valeurs dans src/environments/environment.ts.
+
+3. Installation des dépendances
+
+Bash
+# Installation globale des outils
+npm install -g @angular/cli
+
+# Installation des dépendances projet
+npm install
+4. Lancement de l'application
+
+Vous devez lancer deux terminaux séparés :
+
+Terminal 1 : Backend (Express)
+
+Bash
+# Depuis la racine
+node server.js
+Serveur actif sur : http://localhost:3000
+
+Terminal 2 : Frontend (Angular)
+
+Bash
+# Depuis la racine
+ng serve
+Application accessible sur : http://localhost:4200
+
+📂 Structure du Projet
+Plaintext
+studymap/
+├── src/                # Code source Angular (Frontend) \n
+│   ├── app/            # Composants et Services \n
+│   └── environments/   # Configuration (URL API, Clés Publiques) \n
+├── routes/             # Points d'entrée API Backend (Express) \n
+├── services/           # Logique métier et appels Supabase (Backend) \n
+├── server.js           # Point d'entrée du serveur Node \n
+├── .env.example        # Modèle de variables d'environnement \n
+└── .gitignore          # Protection contre le versioning des clés \n
+
+⚠️ Notes de Sécurité
+Zéro Clé sur Git : Ne poussez jamais vos fichiers .env ou environment.ts. Utilisez uniquement les fichiers .template ou .example.
+
+Architecture : Le frontend communique exclusivement avec le backend Express. Le backend se charge de la liaison sécurisée avec Supabase.
+
+👥 Auteurs (L3 Informatique)
 Noah Cabaret — noahcabaret0902@gmail.com
+
 Thomas Castella — castella.thomas30@gmail.com
+
 Alexandra Pean — alexandra070305@gmail.com
-Prérequis
-Node.js (v18 ou supérieur recommandé)
-npm (v9 ou supérieur recommandé)
-Installation
-Cloner le dépôt
-Installer les dépendances (frontend & backend)
-Créer le fichier .env à la racine du projet
-Copie le fichier .env.example (ou crée un .env vierge) et renseigne les clés nécessaires :
-Obtenir les clés API
-1. Supabase
-Crée un compte sur https://supabase.com/
-Crée un nouveau projet (choisir une base PostgreSQL)
-Récupère l’URL du projet et la clé API (Project API keys > anon ou service_role selon les besoins)
-Renseigne ces valeurs dans le .env :
-SUPABASE_URL=...
-SUPABASE_KEY=...
-2. OpenRouteService
-Crée un compte sur https://openrouteservice.org/dev/#/signup
-Gère tes clés dans le dashboard > API Keys
-Copie la clé et ajoute-la dans le .env :
-ORS_API_KEY=...
-Ne jamais versionner vos clés API !
 
-Lancement de l’application
-1. Démarrer le backend (Express)
-Le serveur écoute par défaut sur http://localhost:3000
-
-2. Démarrer le frontend (Angular)
-Le frontend est accessible sur http://localhost:4200
-
-Structure du projet
-src : code source Angular (frontend)
-server.js : serveur backend Express
-routes : routes API backend
-services : services backend (accès BDD, etc.)
-.env : variables d’environnement (à créer)
-Notes importantes
-Le frontend ne communique jamais directement avec Supabase : toutes les requêtes passent par le backend Express.
-L’authentification Google et la gestion des utilisateurs sont gérées via Supabase côté backend.
-Aucune clé API ne doit être poussée sur le dépôt !
-Développement Angular (CLI)
-Cette application utilise Angular CLI version 21.0.5.
-
-Développement frontend
-Pour lancer le serveur de développement Angular :
-
-Puis ouvrir http://localhost:4200/
-
-Générer un composant Angular
-Pour la liste complète des schémas disponibles :
-
-Build (compilation)
-Les fichiers de build sont générés dans dist/.
-
-Tests unitaires
-Pour exécuter les tests unitaires avec Vitest :
-
-Tests end-to-end
-Pour les tests e2e :
-
-Pour aller plus loin
-Modifier les critères de comparaison dans le code source selon vos besoins
-Ajouter d’autres APIs ou sources de données
-Adapter le design (UI/UX)
-Contact
-Pour toute question, contactez un des auteurs par email.
+Besoin d'aide ? Consultez la documentation officielle de Supabase ou d'Angular.
