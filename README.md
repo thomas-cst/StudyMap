@@ -74,9 +74,20 @@ L'application utilise **PostgreSQL** via Supabase. Pour initialiser votre base d
 4.  Cliquez sur **Run**.
 
 ### 🔄 Peupler les données
-Une fois les tables créées, utilisez nos scripts de synchronisation automatique (via Postman ou Curl) :
-* **Villes** : `POST http://localhost:3000/api/villes/sync`
-* **Universités** : `POST http://localhost:3000/api/universites/sync`
+Une fois les tables créées, vous devez peupler la base de données avec les informations réelles (villes, universités, etc.).
+
+Prérequis : Le serveur backend doit être lancé (node server.js).
+
+Ouvrez un nouveau terminal et exécutez ces commandes l'une après l'autre :
+
+# 1. Synchroniser les villes (données de base)
+curl -X POST http://localhost:3000/api/villes/sync
+
+# 2. Synchroniser les universités
+curl -X POST http://localhost:3000/api/universites/sync
+
+# 3. Synchroniser les restaurants universitaires (CROUS)
+curl -X POST http://localhost:3000/api/restau-univ/sync
 
 5. Lancement de l'application
 
