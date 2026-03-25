@@ -30,7 +30,7 @@ Base de données : PostgreSQL (via Supabase)
 
 APIs Externes : OpenRouteService (Cartographie), Data.gouv (Données ESR/CROUS)
 
-🚀 Installation et Démarrage
+## 🚀 Installation et Démarrage
 1. Clonage du projet
 
 git clone https://github.com/votre-compte/studymap.git
@@ -42,13 +42,13 @@ Le projet utilise des fichiers modèles pour éviter la fuite de clés API.
 
 Côté Backend :
 
-# Copier le modèle et remplir avec vos clés
+## Copier le modèle et remplir avec vos clés
 cp .env.example .env
 Éditez le .env et renseignez SUPABASE_URL, SUPABASE_KEY et ORS_API_KEY.
 
 Côté Frontend (Angular) :
 
-# Créer le dossier environments si absent et copier le modèle
+## Créer le dossier environments si absent et copier le modèle
 mkdir -p src/environments
 cp src/environments/environment.template.ts src/environments/environment.ts
 cp src/environments/environment.template.ts src/environments/environment.development.ts
@@ -58,13 +58,13 @@ Remplissez les valeurs dans src/environments/environment.ts et src/environments/
 3. Installation des dépendances
 
 
-# Installation globale des outils
+## Installation globale des outils
 npm install -g @angular/cli
 
-# Installation des dépendances projet
+## Installation des dépendances projet
 npm install
 
-# Configuration de la Base de Données (Supabase)
+## Configuration de la Base de Données (Supabase)
 
 L'application utilise **PostgreSQL** via Supabase. Pour initialiser votre base de données :
 
@@ -80,13 +80,13 @@ Prérequis : Le serveur backend doit être lancé (node server.js).
 
 Ouvrez un nouveau terminal et exécutez ces commandes l'une après l'autre :
 
-# 1. Synchroniser les villes (données de base)
+### 1. Synchroniser les villes (données de base)
 curl -X POST http://localhost:3000/api/villes/sync
 
-# 2. Synchroniser les universités
+### 2. Synchroniser les universités
 curl -X POST http://localhost:3000/api/universites/sync
 
-# 3. Synchroniser les restaurants universitaires (CROUS)
+### 3. Synchroniser les restaurants universitaires (CROUS)
 curl -X POST http://localhost:3000/api/restau-univ/sync
 
 5. Lancement de l'application
@@ -95,19 +95,17 @@ Vous devez lancer deux terminaux séparés :
 
 Terminal 1 : Backend (Express)
 
-Bash
-# Depuis la racine
-node server.js
+Depuis la racine
+npm run dev
 Serveur actif sur : http://localhost:3000
 
 Terminal 2 : Frontend (Angular)
 
-Bash
-# Depuis la racine
-ng serve
+Depuis la racine
+npm start
 Application accessible sur : http://localhost:4200
 
-## 📂 Structure du Projet
+### 📂 Structure du Projet
 ```plaintext
 studymap/
 ├── src/                # Code source Angular (Frontend)
@@ -125,7 +123,7 @@ Zéro Clé sur Git : Ne poussez jamais vos fichiers .env ou environment.ts. Util
 
 Architecture : Le frontend communique exclusivement avec le backend Express. Le backend se charge de la liaison sécurisée avec Supabase.
 
-## 🛠️ Dépannage (FAQ)
+### 🛠️ Dépannage (FAQ)
 * **Erreur `Unregistered API key`** : Vérifiez que vos clés dans `.env` et `environment.ts` sont bien à jour et que vous avez redémarré les serveurs.
 * **Problème de CORS** : Assurez-vous que l'URL du frontend dans le `.env` du backend correspond exactement à celle de votre navigateur (généralement `http://localhost:4200`).
 * **Port 3000 déjà utilisé** : Vous pouvez changer le port dans le fichier `.env`.
