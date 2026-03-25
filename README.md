@@ -28,27 +28,27 @@ APIs Externes : OpenRouteService (Cartographie), Data.gouv (Données ESR/CROUS)
 🚀 Installation et Démarrage
 1. Clonage du projet
 
-Bash
 git clone https://github.com/votre-compte/studymap.git
 cd studymap
+
 2. Configuration des environnements (Crucial) 🛡️
 
 Le projet utilise des fichiers modèles pour éviter la fuite de clés API.
 
 Côté Backend :
 
-Bash
 # Copier le modèle et remplir avec vos clés
 cp .env.example .env
 Éditez le .env et renseignez SUPABASE_URL, SUPABASE_KEY et ORS_API_KEY.
 
 Côté Frontend (Angular) :
 
-Bash
 # Créer le dossier environments si absent et copier le modèle
 mkdir -p src/environments
 cp src/environments/environment.template.ts src/environments/environment.ts
-Remplissez les valeurs dans src/environments/environment.ts.
+cp src/environments/environment.template.ts src/environments/environment.development.ts
+
+Remplissez les valeurs dans src/environments/environment.ts et src/environments/environment.development.ts.
 
 3. Installation des dépendances
 
@@ -58,6 +58,7 @@ npm install -g @angular/cli
 
 # Installation des dépendances projet
 npm install
+
 4. Lancement de l'application
 
 Vous devez lancer deux terminaux séparés :
@@ -79,14 +80,14 @@ Application accessible sur : http://localhost:4200
 📂 Structure du Projet
 Plaintext
 studymap/
-├── src/                # Code source Angular (Frontend) \n
-│   ├── app/            # Composants et Services \n
-│   └── environments/   # Configuration (URL API, Clés Publiques) \n
-├── routes/             # Points d'entrée API Backend (Express) \n
-├── services/           # Logique métier et appels Supabase (Backend) \n
-├── server.js           # Point d'entrée du serveur Node \n
-├── .env.example        # Modèle de variables d'environnement \n
-└── .gitignore          # Protection contre le versioning des clés \n
+├── src/                # Code source Angular (Frontend).
+│   ├── app/            # Composants et Services.
+│   └── environments/   # Configuration (URL API, Clés Publiques).
+├── routes/             # Points d'entrée API Backend (Express).
+├── services/           # Logique métier et appels Supabase (Backend)
+├── server.js           # Point d'entrée du serveur Node.
+├── .env.example        # Modèle de variables d'environnement.
+└── .gitignore          # Protection contre le versioning des clés.
 
 ⚠️ Notes de Sécurité
 Zéro Clé sur Git : Ne poussez jamais vos fichiers .env ou environment.ts. Utilisez uniquement les fichiers .template ou .example.
@@ -100,4 +101,4 @@ Thomas Castella — castella.thomas30@gmail.com
 
 Alexandra Pean — alexandra070305@gmail.com
 
-Besoin d'aide ? Consultez la documentation officielle de Supabase ou d'Angular.
+Besoin d'aide ? Contactez nous.
