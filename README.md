@@ -77,17 +77,18 @@ Bash
 ng serve
 Application accessible sur : http://localhost:4200
 
-📂 Structure du Projet
-Plaintext
+## 📂 Structure du Projet
+```plaintext
 studymap/
-├── src/                # Code source Angular (Frontend).
-│   ├── app/            # Composants et Services.
-│   └── environments/   # Configuration (URL API, Clés Publiques).
-├── routes/             # Points d'entrée API Backend (Express).
+├── src/                # Code source Angular (Frontend)
+│   ├── app/            # Composants et Services
+│   └── environments/   # Configuration (URL API, Clés Publiques)
+├── routes/             # Points d'entrée API Backend (Express)
 ├── services/           # Logique métier et appels Supabase (Backend)
-├── server.js           # Point d'entrée du serveur Node.
-├── .env.example        # Modèle de variables d'environnement.
-└── .gitignore          # Protection contre le versioning des clés.
+├── server.js           # Point d'entrée du serveur Node
+├── .env.example        # Modèle de variables d'environnement
+└── .gitignore          # Protection contre le versioning des clés
+```
 
 ⚠️ Notes de Sécurité
 Zéro Clé sur Git : Ne poussez jamais vos fichiers .env ou environment.ts. Utilisez uniquement les fichiers .template ou .example.
