@@ -186,4 +186,59 @@ export class VillesService {
       })
     );
   }
+
+  /**
+   * Récupère l'ensoleillement moyen du dernier mois complet (en heures) pour une ville via Open-Meteo
+   * @param lat Latitude
+   * @param lng Longitude
+   * @returns Observable<number> (ensoleillement total du mois en heures)
+   */
+  getMonthlySunshine(lat: number, lng: number): Observable<number> {
+    // Calculer le dernier mois complet
+    const now = new Date();
+    let year = now.getFullYear();
+    let month = now.getMonth(); // 0 = janvier, donc le mois précédent
+    if (month === 0) { // Si janvier, prendre décembre de l'année précédente
+      month = 12;
+      year--;
+    }
+    const start = new Date(year, month - 1, 1); // premier jour du mois précédent
+    const end = new Date(year, month, 0); // dernier jour du mois précédent
+    const start_date = start.toISOString().slice(0, 10);
+    const end_date = end.toISOString().slice(0, 10);
+    const url = 'https://archive-api.open-meteo.com/v1/archive';
+    const params = {
+      latitude: lat,
+      longitude: lng,
+      start_date,
+      end_date,
+      hourly: 'sunshine_duration',
+      timezone: 'Europe/Paris'
+    };
+    return this.http.get<any>(url, { params }).pipe(
+      map(data => {
+        if (!data.hourly || !data.hourly.sunshine_duration) return 0;
+        const totalSeconds = data.hourly.sunshine_duration.reduce((sum: number, val: number) => sum + (val || 0), 0);
+        return Math.round(totalSeconds / 3600); // Convertit en heures
+      }),
+      catchError(() => of(0))
+    );
+  }
+
+  // Récupère le loyer moyen d'une ville (prix/m²)
+  /**
+   * Récupère le loyer moyen d'une ville (prix/m²) via le backend
+   * @param nomVille Nom de la ville
+   * @param codeInsee (optionnel) Code INSEE de la ville
+   */
+  getLoyerMoyen(nomVille: string, codeInsee?: string): Observable<number|null> {
+    let url = `/api/loyer/${encodeURIComponent(nomVille)}`;
+    if (codeInsee) {
+      url += `?code_insee=${encodeURIComponent(codeInsee)}`;
+    }
+    return this.http.get<{ loyer_m2: number }>(url).pipe(
+      map(res => res.loyer_m2 ?? null),
+      catchError(() => of(null))
+    );
+  }
 }

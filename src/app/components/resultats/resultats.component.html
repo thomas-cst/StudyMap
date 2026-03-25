@@ -134,6 +134,7 @@
 
   <ng-template #empty>
     <p *ngIf="query">Aucun résultat pour « {{ query }} ».</p>
-    <p *ngIf="!query">Aucune ville sélectionnée.</p>
+    <p *ngIf="!query && filtreActuel() && (typeof filtreActuel() === 'object' || (typeof filtreActuel() === 'string' && filtreActuel() !== ''))">Aucun résultat pour ce filtre.</p>
+    <p *ngIf="!query && (!filtreActuel() || filtreActuel() === '')">Aucune ville sélectionnée.</p>
   </ng-template>
 </div>

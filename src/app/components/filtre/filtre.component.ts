@@ -33,9 +33,14 @@ export class FiltreComponent {
 	isMenuActive = signal(false);
 
     /** Valeur minimale du slider budget (en euros) */
-	budgetMin = signal(200);
+    budgetMin = signal(200);
     /** Valeur maximale du slider budget (en euros) */
     budgetMax = signal(5000);
+    /** Surface du logement pour le calcul du loyer total */
+    surface = signal(50);
+
+    /** Valeur du filtre sélectionné */
+    private filtreSelectionne: string | null = null;
 
     /** Reference a l'element DOM du composant (pour detecter les clics exterieurs) */
     private elementRef = inject(ElementRef);
@@ -58,9 +63,10 @@ export class FiltreComponent {
     onOptionChange(event: Event) {
         const input = event.target as HTMLInputElement;
         const value = input.value;
+        this.filtreSelectionne = value;
 
+        // Gestion du filtre itineraire avec le service mutualisé (ancienne branche)
         if (value === 'itineraire') {
-            // Utilise le service mutualisé
             this.userLocationService.location$.subscribe((loc: any) => {
                 if (loc) {
                     this.onFiltreChange.emit(`geo:${loc.lat},${loc.lng}`);
@@ -70,8 +76,34 @@ export class FiltreComponent {
                 this.geoError.set(err);
             }).unsubscribe();
             this.userLocationService.requestLocation(true);
+        }
+    }
+    /** Valide le filtre choisi et l'émet au parent */
+    validerFiltre() {
+        if (!this.filtreSelectionne) return;
+        if (this.filtreSelectionne === 'itineraire') {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    this.onFiltreChange.emit(`geo:${lat},${lng}`);
+                },
+                (error) => {
+                    console.error("Erreur de géolocalisation", error);
+                    this.onFiltreChange.emit(this.filtreSelectionne!);
+                }
+            );
+        } else if (this.filtreSelectionne === 'budget') {
+            // Transmettre un objet JSON avec le filtre, les bornes et la surface
+            const filtreBudget = {
+                type: 'budget',
+                min: this.budgetMin(),
+                max: this.budgetMax(),
+                surface: this.surface()
+            };
+            this.onFiltreChange.emit(JSON.stringify(filtreBudget));
         } else {
-            this.onFiltreChange.emit(value);
+            this.onFiltreChange.emit(this.filtreSelectionne);
         }
     }
 

@@ -51,6 +51,15 @@ export class ClassementComponent {
 
   /** Met a jour le filtre selectionne */
   onFiltreChange(filtre: string) {
+    try {
+      const obj = JSON.parse(filtre);
+      if (obj && obj.type === 'budget') {
+        this.filtreActuel.set(obj);
+        return;
+      }
+    } catch {
+      // pas un JSON, on laisse passer la valeur brute
+    }
     this.filtreActuel.set(filtre);
   }
 }

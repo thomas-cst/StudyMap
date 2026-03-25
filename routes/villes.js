@@ -97,4 +97,21 @@ router.post('/villes/sync', async (req, res) => {
   }
 });
 
+// GET /api/loyer/:nomVille - Loyer moyen d'une ville (prix/m²) via CSV local
+const { fetchLoyerMoyenCSV } = require('../services/villesDataService');
+router.get('/loyer/:nomVille', async (req, res) => {
+  try {
+    const { nomVille } = req.params;
+    const codeInsee = req.query.code_insee || null;
+    const loyer = await fetchLoyerMoyenCSV(nomVille, codeInsee);
+    if (loyer === null) {
+      return res.status(404).json({ error: 'Aucune donnée de loyer trouvée pour cette ville.' });
+    }
+    res.json({ nomVille, loyer_m2: loyer });
+  } catch (err) {
+    console.error('ERROR: Loyer CSV:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

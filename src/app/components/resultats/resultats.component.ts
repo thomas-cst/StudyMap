@@ -175,9 +175,17 @@ export class ResultatsComponent implements OnChanges, OnInit {
   }
 
   /** Liste filtree et triee des villes selon la recherche et les filtres actifs */
+  // Cache local pour l'ensoleillement (évite les appels multiples)
+  private sunshineCache: { [key: string]: number } = {};
+  // Signal pour forcer le recalcul du tri météo
+  private sunshineRefresh = signal(0);
+  // Cache local pour le loyer moyen (évite les appels multiples)
+  private loyerCache: { [key: string]: number|null } = {};
+  // Signal pour forcer le recalcul du tri budget
+  private loyerRefresh = signal(0);
   filtered = computed(() => {
     let list = [...this.villes()];
-    const currentFiltre = this.filtreActuel();
+    const currentFiltre: any = this.filtreActuel();
     const q = this.querySignal().trim().toLowerCase();
 
     // Filtrer par nom (Barre de recherche)
@@ -197,6 +205,60 @@ export class ResultatsComponent implements OnChanges, OnInit {
 
     // Filtre "Autour de moi"
     if (currentFiltre.startsWith('geo:')) {
+    // Filtre "Météo / Ensoleillement"
+    if (currentFiltre === 'meteo') {
+      // Dépendance explicite pour forcer le recalcul
+      this.sunshineRefresh();
+      // Si on n'a pas encore les données, on les charge en tâche de fond
+      list.forEach(v => {
+        if (v.lat !== undefined && v.lng !== undefined && this.sunshineCache[v.nom] === undefined) {
+          this.villesService.getMonthlySunshine(v.lat, v.lng).subscribe(val => {
+            this.sunshineCache[v.nom] = val;
+            this.sunshineRefresh.set(this.sunshineRefresh() + 1); // force le recalcul
+          });
+        }
+      });
+      // Trie selon la valeur connue (celles non chargées sont à 0)
+      return list.slice().sort((a, b) => (this.sunshineCache[b.nom] || 0) - (this.sunshineCache[a.nom] || 0));
+    }
+
+    // Filtre "Loyer le moins cher" (budget)
+    if (
+      typeof currentFiltre === 'object' &&
+      currentFiltre !== null &&
+      'type' in currentFiltre &&
+      currentFiltre.type === 'budget'
+    ) {
+      const min = typeof currentFiltre.min === 'number' ? currentFiltre.min : 0;
+      const max = typeof currentFiltre.max === 'number' ? currentFiltre.max : 5000;
+      const surface = typeof currentFiltre.surface === 'number' ? currentFiltre.surface : 50;
+      // Dépendance explicite pour forcer le recalcul
+      this.loyerRefresh();
+      list.forEach(v => {
+        if (this.loyerCache[v.nom] === undefined) {
+          this.villesService.getLoyerMoyen(v.nom, v.code).subscribe(val => {
+            this.loyerCache[v.nom] = val;
+            this.loyerRefresh.set(this.loyerRefresh() + 1); // force le recalcul
+          });
+        }
+      });
+      // Filtrer selon l'intervalle choisi sur le loyer total
+      const filteredList = list.filter(v => {
+        const loyerM2 = this.loyerCache[v.nom];
+        if (loyerM2 === null || loyerM2 === undefined) return false;
+        const loyerTotal = loyerM2 * surface;
+        return loyerTotal >= min && loyerTotal <= max;
+      });
+      // Trie croissant (loyer total le moins cher en premier)
+      return filteredList.slice().sort((a, b) => {
+        const aLoyer = (this.loyerCache[a.nom] ?? Infinity) * surface;
+        const bLoyer = (this.loyerCache[b.nom] ?? Infinity) * surface;
+        return aLoyer - bLoyer;
+      });
+    }
+
+    // Filtre "Autour de moi" 
+   if (currentFiltre.startsWith('geo:')) {
       const [lat, lng] = currentFiltre.replace('geo:', '').split(',').map(Number);
 
       // On ne trie que les villes qui ont des coordonnées valides
