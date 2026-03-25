@@ -1,0 +1,53 @@
+<div class="itineraire-card" *ngIf="itineraire">
+
+  <div class="itineraire-header">
+    <span class="itineraire-header-icon">🚗</span>
+    <span class="itineraire-header-title">Trajet depuis votre position</span>
+  </div>
+
+  <div class="itineraire-body">
+
+    <div class="itineraire-stat">
+      <span class="stat-icon">⏱️</span>
+      <div class="stat-content">
+        <span class="stat-label">Durée estimée</span>
+        <span class="stat-value">
+          <ng-container *ngIf="itineraire.duration as dur; else zeroMin">
+            <ng-container *ngIf="dur >= 60; else minOnly">
+              {{ (dur / 60) | number:'1.0-0' }}<small>h</small>
+              <ng-container *ngIf="dur % 60 !== 0">
+                {{ dur % 60 | number:'1.0-0' }}<small>min</small>
+              </ng-container>
+            </ng-container>
+            <ng-template #minOnly>{{ dur }}<small>min</small></ng-template>
+          </ng-container>
+          <ng-template #zeroMin>0<small>min</small></ng-template>
+        </span>
+      </div>
+    </div>
+
+    <div class="itineraire-divider"></div>
+
+    <div class="itineraire-stat">
+      <span class="stat-icon">📏</span>
+      <div class="stat-content">
+        <span class="stat-label">Distance</span>
+        <span class="stat-value">
+          {{ (itineraire.distance || 0) | number:'1.0-0' }}<small>km</small>
+        </span>
+      </div>
+    </div>
+
+  </div>
+
+  <a class="itineraire-maps-btn"
+     [href]="mapsUrl"
+     target="_blank"
+     rel="noopener noreferrer">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="maps-icon">
+      <path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/>
+    </svg>
+    Ouvrir dans Google Maps
+  </a>
+
+</div>

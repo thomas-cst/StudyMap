@@ -118,6 +118,23 @@
     font-size: 2.2em;
 }
 
+.expanded-title-block {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.ville-meta {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    color: #667788;
+    font-size: 0.95em;
+    flex-wrap: wrap;
+}
+
 .btn-collapse {
     background-color: #2F4156;
     color: white;
@@ -146,32 +163,123 @@
 
 .expanded-body {
     display: flex;
-    gap: 30px;
+    flex-direction: column;
+    gap: 12px;
     flex: 1;
+    overflow-y: auto;
 }
 
-.expanded-image {
-    width: 350px;
-    height: 280px;
-    object-fit: cover;
-    border-radius: 12px;
-    flex-shrink: 0;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+.unis-loading, .unis-empty {
+    color: #888;
+    font-size: 1em;
+    text-align: center;
+    padding: 20px 0;
 }
 
-.expanded-info {
-    flex: 1;
+/* Carte université */
+.uni-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 14px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.uni-card-wrap {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    gap: 15px;
 }
 
-.expanded-info p {
-    margin: 0;
-    color: #555;
-    font-size: 1.05em;
-    line-height: 1.7;
+.uni-card:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.uni-card {
+    cursor: pointer;
+}
+
+.uni-card.open {
+    border: 1px solid #cfd8e1;
+}
+
+.uni-image {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.uni-placeholder {
+    width: 70px;
+    height: 70px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    background: #e0e4e8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.uni-placeholder svg {
+    width: 32px;
+    height: 32px;
+    color: #8899aa;
+}
+
+.uni-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.uni-toggle-btn {
+    border: none;
+    background: #2F4156;
+    color: #fff;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 0.8em;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.uni-toggle-btn:hover {
+    background: #1f3143;
+}
+
+.uni-info h4 {
+    margin: 0 0 4px;
+    font-size: 1em;
+    font-weight: 600;
+    color: #2F4156;
+    text-shadow: none;
+}
+
+.uni-link {
+    color: #2F4156;
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover {
+        color: #567C8E;
+        text-decoration: underline;
+    }
+}
+
+.uni-students {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.85em;
+    color: #667788;
+}
+
+.icon-small {
+    width: 16px;
+    height: 16px;
 }
 
 /* Bouton Favoris (coeur) - haut à droite */

@@ -14,10 +14,17 @@
         @if (menus() === 'accueil') {
             <p id="titre-filtre">Découvrir par :</p>
         
+
             <label class="options">
                 <input type="radio" name="option-accueil" value="itineraire" (change)="onOptionChange($event)">
                 <span>📍 Autour de moi</span>
             </label>
+            <ng-container *ngIf="geoError()">
+                <div class="geo-error">{{ geoError() }}</div>
+                <button (click)="userLocationService.requestLocation(true)" class="btn-relance-geo">
+                    Autoriser la géolocalisation
+                </button>
+            </ng-container>
 
             <label class="options">
                 <input type="radio" name="option-accueil" (change)="onOptionChange($event)" value="mer">
