@@ -33,8 +33,8 @@ APIs Externes : OpenRouteService (Cartographie), Data.gouv (Données ESR/CROUS)
 ## 🚀 Installation et Démarrage
 1. Clonage du projet
 
-git clone git@github.com:thomas-cst/StudyMap.git
-cd studymap
+git clone git@github.com:thomas-cst/StudyMap.git\
+cd StudyMap
 
 2. Configuration des environnements (Crucial) 🛡️
 
