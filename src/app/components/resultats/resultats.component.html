@@ -58,7 +58,6 @@
           </div>
 
           <div class="expanded-body">
-            <img [src]="v.imageUrl" [alt]="v.nom" class="expanded-image" />
             <div class="expanded-info">
               <ng-container *ngIf="geoError()">
                 <p class="geo-error">{{ geoError() }}</p>
@@ -68,40 +67,16 @@
               <ng-container *ngIf="!geoError()">
                 <p *ngIf="itineraireLoading()">Calcul du trajet...</p>
                 <p *ngIf="itineraireError()" class="itineraire-error">{{ itineraireError() }}</p>
-                
-                <ng-container *ngIf="itineraire() as itin">
-                  <div class="itineraire-card">
-                    <div class="itineraire-row">
-                      <span class="itineraire-icon">🚗</span>
-                      <span class="itineraire-label">Trajet estimé :</span>
-                      <span class="itineraire-value">
-                        <ng-container *ngIf="itin.duration as dur; else zeroMin">
-                          <ng-container *ngIf="dur >= 60; else minOnly">
-                            {{ (dur / 60) | number:'1.0-0' }} h
-                            <ng-container *ngIf="dur % 60 !== 0">
-                              {{ (dur % 60) | number:'1.0-0' }} min
-                            </ng-container>
-                          </ng-container>
-                          <ng-template #minOnly>{{ dur }} min</ng-template>
-                        </ng-container>
-                        <ng-template #zeroMin>0 min</ng-template>
-                      </span>
-                    </div>
-                    <div class="itineraire-row">
-                      <span class="itineraire-icon">📏</span>
-                      <span class="itineraire-label">Distance :</span>
-                      <span class="itineraire-value">{{ (itin.distance || 0) | number:'1.1-1' }} km</span>
-                    </div>
-                    <div class="itineraire-row">
-                      <span class="itineraire-icon">🗺️</span>
-                      <a class="itineraire-link" target="_blank"
-                        [href]="'https://www.google.com/maps/dir/?api=1&origin=' + userLocation()?.lat + ',' + userLocation()?.lng + '&destination=' + v.lat + ',' + v.lng"
-                        rel="noopener noreferrer"
-                      >Voir l’itinéraire sur Google Maps</a>
-                    </div>
-                  </div>
-                </ng-container>
-
+              
+                <app-itineraire-card
+                  *ngIf="itineraire()"
+                  [itineraire]="itineraire()"
+                  [userLat]="userLocation()?.lat ?? null"
+                  [userLng]="userLocation()?.lng ?? null"
+                  [villeLat]="v.lat ?? null"
+                  [villeLng]="v.lng ?? null">
+                </app-itineraire-card>
+              
                 <p *ngIf="!itineraire() && !itineraireLoading() && !itineraireError()">
                   Activez la localisation pour voir le temps de trajet.
                 </p>

@@ -1,16 +1,11 @@
 /**
  * Service d'authentification - Gere la connexion/inscription via Supabase
- * 
- * Fonctionnalites :
- * - Inscription et connexion par email/mot de passe
- * - Connexion via Google OAuth
- * - Deconnexion
- * - Synchronisation de l'utilisateur OAuth avec la table users en base
- * - Observable pour reagir aux changements d'etat de connexion
  */
 import { Injectable } from '@angular/core';
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import { BehaviorSubject, Observable } from 'rxjs';
+// Importation de l'environnement (le chemin peut varier selon ta structure)
+import { environment } from '../../environments/environment'; 
 
 @Injectable({
   providedIn: 'root'
@@ -28,11 +23,13 @@ export class AuthService {
   private sessionLoadedResolve: (() => void) | null = null;
 
   constructor() {
-    const supabaseUrl = 'https://bjkpbzsftztbkurneezq.supabase.co';
-    const supabaseKey = 'sb_publishable_w7vbFRPStWM_hnKkuQc3AQ_UcfGpPre';
+    // Utilisation des variables de l'environnement
+    // Note : TypeScript ne râlera plus car les propriétés sont définies dans l'objet environment
+    this.supabase = createClient(
+      environment.supabaseUrl, 
+      environment.supabaseKey
+    );
 
-    this.supabase = createClient(supabaseUrl, supabaseKey);
-    
     // Initialiser l'utilisateur actuel
     const storedUser = localStorage.getItem('currentUser');
     this.currentUserSubject = new BehaviorSubject<User | null>(
@@ -67,10 +64,8 @@ export class AuthService {
     this.supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         localStorage.setItem('currentUser', JSON.stringify(session.user));
-        // Ajouter aussi dans 'user' pour que checkIfConnected() le trouve
         localStorage.setItem('user', JSON.stringify({ email: session.user.email }));
         this.currentUserSubject.next(session.user);
-        // Synchroniser avec la base de données lors de changements
         if (event === 'SIGNED_IN') {
           this.syncUserWithDatabase(session.user);
         }
@@ -80,7 +75,6 @@ export class AuthService {
         this.currentUserSubject.next(null);
       }
       
-      // Marquer que onAuthStateChange a tiré au moins une fois
       if (!authStateChanged) {
         authStateChanged = true;
         if (this.sessionLoadedResolve) {
@@ -95,20 +89,18 @@ export class AuthService {
    */
   async syncUserWithDatabase(user: User): Promise<void> {
     try {
-      // Vérifier si l'utilisateur existe déjà dans la table users
       const { data: existingUser } = await this.supabase
         .from('users')
         .select('id')
         .eq('email', user.email)
         .single();
 
-      // Si l'utilisateur n'existe pas, le créer
       if (!existingUser) {
         await this.supabase
           .from('users')
           .insert([{
             email: user.email,
-            password: null // Pas de password pour OAuth
+            password: null 
           }]);
         console.log(`User ${user.email} créé dans la base de données`);
       }
@@ -117,9 +109,6 @@ export class AuthService {
     }
   }
 
-  /**
-   * Inscription par email/mot de passe
-   */
   async signUp(email: string, password: string): Promise<{ user: User | null; error: any }> {
     const { data, error } = await this.supabase.auth.signUp({ email, password });
     if (!error && data.user) {
@@ -128,17 +117,11 @@ export class AuthService {
     return { user: data.user ?? null, error };
   }
 
-  /**
-   * Connexion par email/mot de passe
-   */
   async signIn(email: string, password: string): Promise<{ user: User | null; error: any }> {
     const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
     return { user: data.user ?? null, error };
   }
 
-  /**
-   * Connexion avec Google OAuth
-   */
   async loginWithGoogle(): Promise<{ error: any }> {
     const { error } = await this.supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -149,9 +132,6 @@ export class AuthService {
     return { error };
   }
 
-  /**
-   * Déconnexion
-   */
   async logout(): Promise<{ error: any }> {
     const { error } = await this.supabase.auth.signOut();
     localStorage.removeItem('currentUser');
@@ -159,23 +139,14 @@ export class AuthService {
     return { error };
   }
 
-  /**
-   * Retourne l'utilisateur actuel
-   */
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
   }
 
-  /**
-   * Retourne true si l'utilisateur est connecté
-   */
   isAuthenticated(): boolean {
     return this.currentUserSubject.value !== null;
   }
 
-  /**
-   * Attend que la session Supabase soit chargée
-   */
   async ensureSessionLoaded(): Promise<void> {
     return this.sessionLoadedPromise;
   }

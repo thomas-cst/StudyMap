@@ -21,6 +21,7 @@ import { UniversitesService, Universite } from '../../services/universites.servi
 import { MapSyncService } from '../../services/map-sync.service';
 import { SearchSyncService } from '../../services/search-sync.service';
 import { RestaurantsUniversitairesComponent } from '../restaurants-universitaires/restaurants-universitaires.component';
+import { ItineraireCardComponent } from '../itineraire-card/itineraire-card.component';
 import { AuthService } from '../../services/auth.service';
 import { AuthPopupService } from '../../services/auth-popup.service';
 
@@ -30,7 +31,7 @@ import { AuthPopupService } from '../../services/auth-popup.service';
 @Component({
   selector: 'app-resultats',
   standalone: true,
-  imports: [CommonModule, RestaurantsUniversitairesComponent],
+  imports: [CommonModule, RestaurantsUniversitairesComponent, ItineraireCardComponent],
   templateUrl: './resultats.component.html',
   styleUrl: './resultats.component.scss'
 })
