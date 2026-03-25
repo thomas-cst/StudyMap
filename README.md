@@ -58,9 +58,9 @@ Créez un compte sur Supabase.com.
 
 Créez un nouveau projet (ex: "StudyMap").
 
-Allez dans Project Settings (icône roue crantée en bas à gauche) > API.
+Dans l'onglet project overview votre Project URL est disponible, en le survolant vous aurez également la clé.
 
-Copiez l'Project URL et la clé anon (public).
+Copiez Project URL et la clé.
 
 B. OpenRouteService (Calcul d'itinéraires)
 
@@ -68,9 +68,7 @@ Créez un compte gratuit sur OpenRouteService API.
 
 Validez votre email et connectez-vous au Dashboard.
 
-Dans l'onglet Tokens, cliquez sur Create Token.
-
-Donnez un nom (ex: "StudyMap-Dev") et copiez la clé générée.
+La clé est directement disponible sur le dashboard.
 
 4. Configuration des environnements 🛡️
 
