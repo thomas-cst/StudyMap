@@ -7,8 +7,8 @@
 
   <!-- Grille des cartes de villes favorites -->
   <ng-container *ngIf="villes().length > 0; else empty">
-    <div class="ville-card" 
-        *ngFor="let v of villes()"
+    <div class="ville-card"
+        *ngFor="let v of filtered()"
          [class.expanded]="isExpanded(v)">
 
       <!-- Image lazy-loaded -->
@@ -20,6 +20,7 @@
       
       <!-- Mode normal : carte avec image de fond, bouton coeur et bouton details -->
       <ng-container *ngIf="!isExpanded(v)">
+        <div class="filter-badge" *ngIf="getFilterBadge(v) as badge">{{ badge }}</div>
         <!-- Icône coeur en haut à droite -->
         <button class="btn-favoris" 
                 [class.active]="isFavoris(v.nom)"
@@ -66,6 +67,28 @@
             </button>
           </div>
           <div class="expanded-body">
+            <!-- Itinéraire -->
+            <div class="expanded-info">
+              <ng-container *ngIf="geoError()">
+                <p class="geo-error">{{ geoError() }}</p>
+              </ng-container>
+              <ng-container *ngIf="!geoError()">
+                <p *ngIf="itineraireLoading()">Calcul du trajet...</p>
+                <p *ngIf="itineraireError()" class="itineraire-error">{{ itineraireError() }}</p>
+                <app-itineraire-card
+                  *ngIf="itineraire()"
+                  [itineraire]="itineraire()"
+                  [userLat]="userLocation()?.lat ?? null"
+                  [userLng]="userLocation()?.lng ?? null"
+                  [villeLat]="v.lat ?? null"
+                  [villeLng]="v.lng ?? null">
+                </app-itineraire-card>
+                <p *ngIf="!itineraire() && !itineraireLoading() && !itineraireError()">
+                  Activez la localisation pour voir le temps de trajet.
+                </p>
+              </ng-container>
+            </div>
+
             <!-- Loading -->
             <p *ngIf="universitesLoading()" class="unis-loading">Chargement des universités...</p>
 

@@ -66,38 +66,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`
-╔════════════════════════════════════════╗
-║  StudyMap Backend Server               ║
-╚════════════════════════════════════════╝
-
-📡 Server running on port ${PORT}
-🌍 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:4200'}
-💾 Database: Supabase PostgreSQL
-🔄 Villes Service: villesDataService.js
-
-Available routes:
-  GET  /health
-  GET  /api/villes              - Liste toutes les villes (BD)
-  GET  /api/villes/:id         - Détail d'une ville
-  GET  /api/villes/search/:nom - Cherche une ville (BD→API)
-  POST /api/villes/sync        - Synchronise les villes
-  GET  /api/universites         - Liste des universités
-  GET  /api/universites/:id    - Détail d'une université
-  GET  /api/universites/ville/:villeId - Par ville
-  POST /api/universites/sync   - Synchro ESR + Wikidata
-  GET  /api/restau-univ         - Liste des restaurants
-  GET  /api/restau-univ/universite/:univId - Par université
-  POST /api/restau-univ/sync   - Synchro CROUS
-  GET  /api/favorites/:email  - Favoris d'un utilisateur
-  POST /api/favorites/add      - Ajouter un favori
-  DEL  /api/favorites/remove/:email/:nomVille - Supprimer un favori
-
-Quick start:
-  1. POST /api/villes/sync      - Initialiser les villes
-  2. GET  /api/villes           - Récupérer la liste
-  3. GET  /api/villes/search/Paris - Chercher une ville
-  `);
+  console.log(`Server is running on port ${PORT}`);
 });
 
 module.exports = app;

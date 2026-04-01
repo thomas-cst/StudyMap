@@ -16,13 +16,16 @@ import { UniversitesService, Universite } from '../../services/universites.servi
 import { MapSyncService } from '../../services/map-sync.service';
 import { SearchSyncService } from '../../services/search-sync.service';
 import { RestaurantsUniversitairesComponent } from '../restaurants-universitaires/restaurants-universitaires.component';
+import { ItineraireCardComponent } from '../itineraire-card/itineraire-card.component';
+import { ItineraireService } from '../../services/itineraire.service';
+import { UserLocationService, UserLocation } from '../../services/user-location.service';
 import { AuthService } from '../../services/auth.service';
 import { AuthPopupService } from '../../services/auth-popup.service';
 
 @Component({
   selector: 'app-favoris-display', 
   standalone: true,        
-  imports: [CommonModule, RestaurantsUniversitairesComponent],            
+  imports: [CommonModule, RestaurantsUniversitairesComponent, ItineraireCardComponent],
   templateUrl: './favoris-display.component.html',
   styleUrl: './favoris-display.component.scss'
 })
@@ -33,9 +36,12 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   /** Signal local qui synchronise la valeur de l'Input query pour une utilisation reactive */
   private querySignal = signal('');
 
+  /** Signal local pour rendre filtreActuel reactif dans computed() */
+  private filtreActuelSignal = signal<any>('');
+
   private universitesService = inject(UniversitesService);
   /** Filtre actuellement selectionne (recu du composant parent) */
-  @Input() filtreActuel = '';
+  @Input() filtreActuel: any = '';
 
   /** Service de gestion des favoris (ajout, suppression, liste) */
   private favorisService = inject(FavorisService);
@@ -45,6 +51,8 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   private mapSyncService = inject(MapSyncService);
   /** Service de synchronisation de la barre de recherche entre composants */
   private searchSyncService = inject(SearchSyncService);
+  private userLocationService = inject(UserLocationService);
+  private itineraireService = inject(ItineraireService);
   /** Service d'authentification pour verifier la connexion */
   private authService = inject(AuthService);
   /** Service pour demander l'ouverture de la popup de connexion */
@@ -65,6 +73,13 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   universitesMap = signal<{ [villeId: number]: Universite[] }>({});
   universitesLoading = signal(false);
 
+  userLocation = signal<UserLocation | null>(null);
+  geoError = signal<string | null>(null);
+  itineraire = signal<{ distance: number | null; duration: number | null } | null>(null);
+  itineraireLoading = signal(false);
+  itineraireError = signal<string | null>(null);
+  private itineraireCache = new Map<string, { distance: number; duration: number }>();
+
   /** Derniere ville zoomee sur la carte, pour eviter les appels API dupliques */
   private lastZoomedVille = signal<string | null>(null);
 
@@ -72,54 +87,123 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   private isManualSelection = signal<boolean>(false);
 
   ngOnInit() {
-    // On n'a pas besoin d'effect ici - les villes viennent du service
+    this.userLocationService.location$.subscribe(loc => this.userLocation.set(loc));
+    this.userLocationService.error$.subscribe(err => this.geoError.set(err));
+    this.userLocationService.requestLocation();
   }
 
   /** sync les changements d'Input avec le signal local */
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['query']) {
       this.querySignal.set(this.query);
-      // Réinitialiser la sélection manuelle quand la requête change (permet à la recherche de fonctionner)
       this.isManualSelection.set(false);
+    }
+    if (changes['filtreActuel']) {
+      this.filtreActuelSignal.set(this.filtreActuel);
     }
   }
 
-  /** Favoris filtres par le terme de recherche et tries par consultation recente */
+  // Cache loyer moyen pour le filtre budget
+  private loyerCache: { [key: string]: number | null } = {};
+  private loyerRefresh = signal(0);
+
+  /** Favoris filtres et tries selon la recherche et le filtre actif */
   filtered = computed(() => {
-    const villes = this.villes();
+    let list = [...this.villes()];
+    const currentFiltre: any = this.filtreActuelSignal();
     const q = this.querySignal().trim().toLowerCase();
-    const recent = this.mapSyncService.recentlyViewed();
-    
-    let result = villes;
+
     if (q) {
-      result = villes.filter(v => v.nom.toLowerCase().includes(q));
+      list = list.filter(v => v.nom.toLowerCase().includes(q));
     }
-    
-    // Trier: d'abord les villes récemment consultées, puis le reste
-    if (recent.length === 0) return result;
-    
-    // Créer un Map pour des lookups O(1) des codes INSEE
+
+    // Filtre "Autour de moi"
+    if (typeof currentFiltre === 'string' && currentFiltre.startsWith('geo:')) {
+      const [lat, lng] = currentFiltre.replace('geo:', '').split(',').map(Number);
+      return list
+        .filter(v => v.lat !== undefined && v.lng !== undefined)
+        .sort((a, b) => this.getDistance(lat, lng, a.lat!, a.lng!) - this.getDistance(lat, lng, b.lat!, b.lng!));
+    }
+
+    // Filtre "Loyer le moins cher" (budget)
+    if (typeof currentFiltre === 'object' && currentFiltre !== null && currentFiltre.type === 'budget') {
+      const min = currentFiltre.min ?? 0;
+      const max = currentFiltre.max ?? 5000;
+      const surface = currentFiltre.surface ?? 50;
+      this.loyerRefresh();
+      list.forEach(v => {
+        if (this.loyerCache[v.nom] === undefined) {
+          this.villesService.getLoyerMoyen(v.nom, v.code).subscribe(val => {
+            this.loyerCache[v.nom] = val;
+            this.loyerRefresh.set(this.loyerRefresh() + 1);
+          });
+        }
+      });
+      return list
+        .filter(v => {
+          const loyer = this.loyerCache[v.nom];
+          if (loyer === null || loyer === undefined) return false;
+          const total = loyer * surface;
+          return total >= min && total <= max;
+        })
+        .sort((a, b) => ((this.loyerCache[a.nom] ?? Infinity) * surface) - ((this.loyerCache[b.nom] ?? Infinity) * surface));
+    }
+
+    // Filtre "Qualité des transports"
+    if (currentFiltre === 'transport') {
+      const withScore = list.filter(v => v.score_transport !== null && v.score_transport !== undefined);
+      const withoutScore = list.filter(v => v.score_transport === null || v.score_transport === undefined);
+      withScore.sort((a, b) => (b.score_transport ?? 0) - (a.score_transport ?? 0));
+      withoutScore.sort((a, b) => (b.nb_lignes_transport ?? 0) - (a.nb_lignes_transport ?? 0));
+      return [...withScore, ...withoutScore];
+    }
+
+    // Par défaut : trier par consultées récemment
+    const recent = this.mapSyncService.recentlyViewed();
+    if (recent.length === 0) return list;
     const recentMap = new Map(recent.map((code, i) => [code, i]));
-    
-    // Trier sans muter l'array original
-    return [...result].sort((a, b) => {
+    return list.sort((a, b) => {
       const aIndex = recentMap.get(a.code);
       const bIndex = recentMap.get(b.code);
-      
-      const aIsRecent = aIndex !== undefined;
-      const bIsRecent = bIndex !== undefined;
-      
-      if (aIsRecent && !bIsRecent) return -1;
-      if (!aIsRecent && bIsRecent) return 1;
-      
-      // Si les deux sont récentes, garder l'ordre de recentlyViewed
-      if (aIsRecent && bIsRecent) {
-        return aIndex! - bIndex!;
-      }
-      
+      if (aIndex !== undefined && bIndex === undefined) return -1;
+      if (aIndex === undefined && bIndex !== undefined) return 1;
+      if (aIndex !== undefined && bIndex !== undefined) return aIndex - bIndex;
       return 0;
     });
   });
+
+  /** Retourne le badge à afficher sur la carte selon le filtre actif */
+  getFilterBadge(v: Ville): string | null {
+    const f: any = this.filtreActuelSignal();
+    if (typeof f === 'string' && f.startsWith('geo:')) {
+      if (v.lat === undefined || v.lng === undefined) return null;
+      const [lat, lng] = f.replace('geo:', '').split(',').map(Number);
+      const d = this.getDistance(lat, lng, v.lat, v.lng);
+      return `${Math.round(d)} km`;
+    }
+    if (typeof f === 'object' && f?.type === 'budget') {
+      const loyer = this.loyerCache[v.nom];
+      if (loyer == null) return null;
+      const surface = f.surface ?? 50;
+      return `${Math.round(loyer * surface)} €/mois`;
+    }
+    if (f === 'transport') {
+      if (v.score_transport != null) return `Score ${v.score_transport}`;
+      if (v.nb_lignes_transport != null) return `${v.nb_lignes_transport} lignes`;
+      return null;
+    }
+    return null;
+  }
+
+  /** Calcule la distance en km entre deux coordonnees GPS (formule de Haversine) */
+  private getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
 
   /** Ajoute ou retire une ville des favoris (ouvre la popup login si non connecte) */
   toggleFavoris(ville: Ville) {
@@ -166,6 +250,29 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
     }
   }
 
+  /** Charge l'itinéraire voiture entre la position utilisateur et la ville */
+  private loadItineraire(ville: Ville) {
+    this.itineraire.set(null);
+    this.itineraireError.set(null);
+    if (!this.userLocation() || ville.lat === undefined || ville.lng === undefined) return;
+    const user = this.userLocation()!;
+    const cacheKey = `${user.lat},${user.lng}-${ville.lat},${ville.lng}`;
+    const cached = this.itineraireCache.get(cacheKey);
+    if (cached) { this.itineraire.set(cached); return; }
+    this.itineraireLoading.set(true);
+    this.itineraireService.getItineraire(user, { lat: ville.lat, lng: ville.lng }).subscribe({
+      next: (res) => {
+        this.itineraire.set(res);
+        this.itineraireCache.set(cacheKey, res);
+        this.itineraireLoading.set(false);
+      },
+      error: () => {
+        this.itineraireError.set("Erreur lors du calcul de l'itinéraire.");
+        this.itineraireLoading.set(false);
+      }
+    });
+  }
+
   /** Ouvre ou ferme les details d'une ville dans la grille */
   toggleExpanded(ville: Ville) {
     if (this.expandedVille()?.code === ville.code) {
@@ -173,16 +280,19 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
       this.expandedVille.set(null);
       this.expandedUniversiteId.set(null);
       this.isManualSelection.set(false);
-      this.querySignal.set(''); // Vider le signal local
-      this.searchSyncService.clearSearch(); // Demander au parent de vider l'input
+      this.querySignal.set('');
+      this.searchSyncService.clearSearch();
+      this.itineraire.set(null);
+      this.itineraireError.set(null);
     } else {
       // Ouvrir une nouvelle ville
       this.expandedVille.set(ville);
       this.expandedUniversiteId.set(null);
       this.lastZoomedVille.set(ville.code);
-      this.isManualSelection.set(true); // Blocker la recherche d'override la sélection
-      this.querySignal.set(''); // Vider le buffer recherche
+      this.isManualSelection.set(true);
+      this.querySignal.set('');
       this.expandAndZoom(ville);
+      this.loadItineraire(ville);
       this.loadUniversites(ville);
     }
   }

@@ -203,22 +203,17 @@ export class ResultatsComponent implements OnChanges, OnInit {
       return list.filter(v => this.villesService.isVilleMontagne(v.nom));
     }
 
-    // Filtre "Autour de moi"
-    if (currentFiltre.startsWith('geo:')) {
     // Filtre "Météo / Ensoleillement"
     if (currentFiltre === 'meteo') {
-      // Dépendance explicite pour forcer le recalcul
       this.sunshineRefresh();
-      // Si on n'a pas encore les données, on les charge en tâche de fond
       list.forEach(v => {
         if (v.lat !== undefined && v.lng !== undefined && this.sunshineCache[v.nom] === undefined) {
           this.villesService.getMonthlySunshine(v.lat, v.lng).subscribe(val => {
             this.sunshineCache[v.nom] = val;
-            this.sunshineRefresh.set(this.sunshineRefresh() + 1); // force le recalcul
+            this.sunshineRefresh.set(this.sunshineRefresh() + 1);
           });
         }
       });
-      // Trie selon la valeur connue (celles non chargées sont à 0)
       return list.slice().sort((a, b) => (this.sunshineCache[b.nom] || 0) - (this.sunshineCache[a.nom] || 0));
     }
 
@@ -232,24 +227,21 @@ export class ResultatsComponent implements OnChanges, OnInit {
       const min = typeof currentFiltre.min === 'number' ? currentFiltre.min : 0;
       const max = typeof currentFiltre.max === 'number' ? currentFiltre.max : 5000;
       const surface = typeof currentFiltre.surface === 'number' ? currentFiltre.surface : 50;
-      // Dépendance explicite pour forcer le recalcul
       this.loyerRefresh();
       list.forEach(v => {
         if (this.loyerCache[v.nom] === undefined) {
           this.villesService.getLoyerMoyen(v.nom, v.code).subscribe(val => {
             this.loyerCache[v.nom] = val;
-            this.loyerRefresh.set(this.loyerRefresh() + 1); // force le recalcul
+            this.loyerRefresh.set(this.loyerRefresh() + 1);
           });
         }
       });
-      // Filtrer selon l'intervalle choisi sur le loyer total
       const filteredList = list.filter(v => {
         const loyerM2 = this.loyerCache[v.nom];
         if (loyerM2 === null || loyerM2 === undefined) return false;
         const loyerTotal = loyerM2 * surface;
         return loyerTotal >= min && loyerTotal <= max;
       });
-      // Trie croissant (loyer total le moins cher en premier)
       return filteredList.slice().sort((a, b) => {
         const aLoyer = (this.loyerCache[a.nom] ?? Infinity) * surface;
         const bLoyer = (this.loyerCache[b.nom] ?? Infinity) * surface;
@@ -257,11 +249,9 @@ export class ResultatsComponent implements OnChanges, OnInit {
       });
     }
 
-    // Filtre "Autour de moi" 
-   if (currentFiltre.startsWith('geo:')) {
+    // Filtre "Autour de moi"
+    if (typeof currentFiltre === 'string' && currentFiltre.startsWith('geo:')) {
       const [lat, lng] = currentFiltre.replace('geo:', '').split(',').map(Number);
-
-      // On ne trie que les villes qui ont des coordonnées valides
       return list
         .filter(v => v.lat !== undefined && v.lng !== undefined)
         .sort((a, b) => {
@@ -270,20 +260,43 @@ export class ResultatsComponent implements OnChanges, OnInit {
           return distA - distB;
         });
     }
+
+    // ─────────────────────────────────────────────────────────────────
+    // Filtre "Qualité des transports"
+    // Tri : score_transport DESC (calculé par scripts/transport-score.js)
+    // Fallback : nb_lignes_transport si score absent
+    // ─────────────────────────────────────────────────────────────────
+    if (currentFiltre === 'transport') {
+      const withScore = list.filter(
+        v => v.score_transport !== null && v.score_transport !== undefined
+      );
+      const withoutScore = list.filter(
+        v => v.score_transport === null || v.score_transport === undefined
+      );
+
+      // Trier celles qui ont un score (décroissant)
+      withScore.sort((a, b) => (b.score_transport ?? 0) - (a.score_transport ?? 0));
+
+      // Fallback : trier les sans-score par nb_lignes si disponible
+      withoutScore.sort(
+        (a, b) => (b.nb_lignes_transport ?? 0) - (a.nb_lignes_transport ?? 0)
+      );
+
+      return [...withScore, ...withoutScore];
+    }
+
     // Si on a pas accès aux données de géoloc -> trier par consultés récemment
-    else {
-      const recent = this.mapSyncService.recentlyViewed();
-      if (recent.length > 0) {
-        const recentMap = new Map(recent.map((v, i) => [v, i]));
-        list.sort((a, b) => {
-          const aIndex = recentMap.get(a.nom);
-          const bIndex = recentMap.get(b.nom);
-          if (aIndex !== undefined && bIndex === undefined) return -1;
-          if (aIndex === undefined && bIndex !== undefined) return 1;
-          if (aIndex !== undefined && bIndex !== undefined) return aIndex - bIndex;
-          return 0;
-        });
-      }
+    const recent = this.mapSyncService.recentlyViewed();
+    if (recent.length > 0) {
+      const recentMap = new Map(recent.map((v, i) => [v, i]));
+      list.sort((a, b) => {
+        const aIndex = recentMap.get(a.nom);
+        const bIndex = recentMap.get(b.nom);
+        if (aIndex !== undefined && bIndex === undefined) return -1;
+        if (aIndex === undefined && bIndex !== undefined) return 1;
+        if (aIndex !== undefined && bIndex !== undefined) return aIndex - bIndex;
+        return 0;
+      });
     }
 
     return list;
@@ -426,6 +439,29 @@ export class ResultatsComponent implements OnChanges, OnInit {
 
   isUniversiteExpanded(universiteId: number): boolean {
     return this.expandedUniversiteId() === universiteId;
+  }
+
+  /** Retourne le badge à afficher sur la carte selon le filtre actif */
+  getFilterBadge(v: Ville): string | null {
+    const f: any = this.filtreActuel();
+    if (typeof f === 'string' && f.startsWith('geo:')) {
+      if (v.lat === undefined || v.lng === undefined) return null;
+      const [lat, lng] = f.replace('geo:', '').split(',').map(Number);
+      const d = this.getDistance(lat, lng, v.lat, v.lng);
+      return `${Math.round(d)} km`;
+    }
+    if (typeof f === 'object' && f?.type === 'budget') {
+      const loyer = this.loyerCache[v.nom];
+      if (loyer == null) return null;
+      const surface = f.surface ?? 50;
+      return `${Math.round(loyer * surface)} €/mois`;
+    }
+    if (f === 'transport') {
+      if (v.score_transport != null) return `Score ${v.score_transport}`;
+      if (v.nb_lignes_transport != null) return `${v.nb_lignes_transport} lignes`;
+      return null;
+    }
+    return null;
   }
 
   /** Calcule la distance en km entre deux coordonnees GPS (formule de Haversine) */

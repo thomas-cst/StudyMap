@@ -18,6 +18,10 @@ export interface Ville {
   lng?: number;
   nb_hab?: number | null;
   nb_etu?: number | null;
+  score_transport?: number | null;
+  nb_lignes_transport?: number | null;
+  nb_arrets_transport?: number | null;
+  km_lignes_transport?: number | null;
 }
 
 /** Format Open-Meteo Geocoding */
@@ -64,7 +68,7 @@ export class VillesService {
   /** Corrections manuelles de coordonnees chargees depuis un fichier JSON */
   private coordinatesFixes: { [key: string]: { lat: number; lng: number } } = {};
 
-  private cacheKey = 'villes_cache_v5';
+  private cacheKey = 'villes_cache_v6';
   private villesCache: Ville[] | null = null;
   /** URL de base de l'API de geocodage Open-Meteo */
   private openMeteoBaseUrl = 'https://geocoding-api.open-meteo.com/v1/search';
@@ -133,7 +137,11 @@ export class VillesService {
         lat: v.latitude,
         lng: v.longitude,
         nb_hab: v.nb_hab ?? null,
-        nb_etu: v.nb_etu ?? null
+        nb_etu: v.nb_etu ?? null,
+        score_transport: v.score_transport ?? null,
+        nb_lignes_transport: v.nb_lignes_transport ?? null,
+        nb_arrets_transport: v.nb_arrets_transport ?? null,
+        km_lignes_transport: v.km_lignes_transport ?? null
       })))
     );
   }
