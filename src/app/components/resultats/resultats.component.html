@@ -15,7 +15,8 @@
            class="ville-card-bg" />
       
       <ng-container *ngIf="!isExpanded(v)">
-        <button class="btn-favoris" 
+        <div class="filter-badge" *ngIf="getFilterBadge(v) as badge">{{ badge }}</div>
+        <button class="btn-favoris"
                 [class.active]="isFavoris(v.nom)"
                 (click)="toggleFavoris(v)"
                 title="Ajouter aux favoris">

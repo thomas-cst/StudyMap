@@ -299,30 +299,19 @@ export class ResultatsComponent implements OnChanges, OnInit {
         );
         if (!hasData) {
           this.villesService.getLoyerMoyen(v.nom, v.code).subscribe(val => {
-            const existing = this.loyerCache()[v.code];
-            if (!existing || (existing.studio === undefined && existing.t2 === undefined && existing.t3 === undefined)) {
-              this.loyerCache.update(c => ({
-                ...c,
-                [v.code]: { studio: val ?? undefined, t2: val ?? undefined, t3: val ?? undefined }
-              }));
-            }
-            this.loyerRefresh.set(this.loyerRefresh() + 1);
+            this.loyerCache[v.nom] = val;
+            this.loyerRefresh.set(this.loyerRefresh() + 1); // force le recalcul
           });
         }
       });
-
-      const getPrix = (code: string): number | undefined => {
-        const c = this.loyerCache()[code];
-        return c?.studio ?? c?.t2 ?? c?.t3;
-      };
-
+      // Filtrer selon l'intervalle choisi sur le loyer total
       const filteredList = list.filter(v => {
         const loyerM2 = getPrix(v.code);
         if (loyerM2 === undefined) return true;
         const loyerTotal = loyerM2 * surface;
         return loyerTotal >= min && loyerTotal <= max;
       });
-
+      // Trie croissant (loyer total le moins cher en premier)
       return filteredList.slice().sort((a, b) => {
         const aLoyer = (getPrix(a.code) ?? Infinity) * surface;
         const bLoyer = (getPrix(b.code) ?? Infinity) * surface;
@@ -342,7 +331,31 @@ export class ResultatsComponent implements OnChanges, OnInit {
         });
     }
 
-    // Trier par consultés récemment si pas de géoloc
+    // ─────────────────────────────────────────────────────────────────
+    // Filtre "Qualité des transports"
+    // Tri : score_transport DESC (calculé par scripts/transport-score.js)
+    // Fallback : nb_lignes_transport si score absent
+    // ─────────────────────────────────────────────────────────────────
+    if (currentFiltre === 'transport') {
+      const withScore = list.filter(
+        v => v.score_transport !== null && v.score_transport !== undefined
+      );
+      const withoutScore = list.filter(
+        v => v.score_transport === null || v.score_transport === undefined
+      );
+
+      // Trier celles qui ont un score (décroissant)
+      withScore.sort((a, b) => (b.score_transport ?? 0) - (a.score_transport ?? 0));
+
+      // Fallback : trier les sans-score par nb_lignes si disponible
+      withoutScore.sort(
+        (a, b) => (b.nb_lignes_transport ?? 0) - (a.nb_lignes_transport ?? 0)
+      );
+
+      return [...withScore, ...withoutScore];
+    }
+
+    // Si on a pas accès aux données de géoloc -> trier par consultés récemment
     const recent = this.mapSyncService.recentlyViewed();
     if (recent.length > 0) {
       const recentMap = new Map(recent.map((v, i) => [v, i]));
@@ -498,6 +511,29 @@ export class ResultatsComponent implements OnChanges, OnInit {
 
   isUniversiteExpanded(universiteId: number): boolean {
     return this.expandedUniversiteId() === universiteId;
+  }
+
+  /** Retourne le badge à afficher sur la carte selon le filtre actif */
+  getFilterBadge(v: Ville): string | null {
+    const f: any = this.filtreActuel();
+    if (typeof f === 'string' && f.startsWith('geo:')) {
+      if (v.lat === undefined || v.lng === undefined) return null;
+      const [lat, lng] = f.replace('geo:', '').split(',').map(Number);
+      const d = this.getDistance(lat, lng, v.lat, v.lng);
+      return `${Math.round(d)} km`;
+    }
+    if (typeof f === 'object' && f?.type === 'budget') {
+      const loyer = this.loyerCache[v.nom];
+      if (loyer == null) return null;
+      const surface = f.surface ?? 50;
+      return `${Math.round(loyer * surface)} €/mois`;
+    }
+    if (f === 'transport') {
+      if (v.score_transport != null) return `Score ${v.score_transport}`;
+      if (v.nb_lignes_transport != null) return `${v.nb_lignes_transport} lignes`;
+      return null;
+    }
+    return null;
   }
 
   /** Calcule la distance en km entre deux coordonnees GPS (formule de Haversine) */
