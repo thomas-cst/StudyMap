@@ -1,7 +1,3 @@
-// ====================================================
-// LOYERS - Lecture du CSV local (assets)
-// ====================================================
-
 const fs = require('fs');
 const path = require('path');
 const csvFilePath = path.join(__dirname, '../src/assets/pred-app3-mef-dhup.csv');
@@ -9,7 +5,6 @@ let loyersCache = null;
 
 /**
  * Charge et parse le CSV des loyers une seule fois (cache en mémoire)
- * @returns {Promise<Array<Object>>}
  */
 async function loadLoyersCSV() {
   if (loyersCache) return loyersCache;
@@ -37,25 +32,19 @@ async function loadLoyersCSV() {
 
 /**
  * Récupère le loyer moyen d'une ville (prix/m²) via le CSV local
- * @param {string} nomVille
- * @param {string} [codeInsee] (optionnel)
- * @returns {Promise<number|null>} Loyer moyen au m² ou null si non trouvé
  */
 async function fetchLoyerMoyenCSV(nomVille, codeInsee = null) {
   const loyers = await loadLoyersCSV();
-  // Recherche insensible à la casse et aux accents
-  const normalize = s => s?.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
-  const nomVilleNorm = normalize(nomVille);
-  let found = loyers.find(row => normalize(row.LIBGEO) === nomVilleNorm);
-  // Si pas trouvé, tente par code INSEE si fourni
-  if (!found && codeInsee) {
-    found = loyers.find(row => row.INSEE_C === codeInsee);
+  const normalize = s => s?.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
+  const nomNorm = normalize(nomVille);
+ 
+  if (codeInsee) {
+    const byInsee = loyers.filter(row => row.INSEE_C === codeInsee);
+    if (byInsee.length > 0) {
+      const prix = byInsee.map(r => parseFloat(r.loypredm2?.replace(',', '.'))).filter(v => !isNaN(v));
+      if (prix.length > 0) return Math.round(prix.reduce((a, b) => a + b, 0) / prix.length * 100) / 100;
+    }
   }
-  if (!found) return null;
-  // Le champ "loypredm2" contient le loyer moyen au m² (remplacer virgule par point)
-  const loyerStr = found.loypredm2?.replace(',', '.');
-  const loyer = parseFloat(loyerStr);
-  return isNaN(loyer) ? null : loyer;
 }
 /**
  * Service de données des villes

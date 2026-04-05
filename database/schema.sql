@@ -75,3 +75,6 @@ CREATE TABLE favoris (
   universite_id INTEGER REFERENCES universites(id) ON DELETE CASCADE,
   added_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- ajout colonne nb_emplois dans la table ville 
+ALTER TABLE villes ADD COLUMN nb_emplois INTEGER;

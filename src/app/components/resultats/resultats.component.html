@@ -125,6 +125,12 @@
                   [universiteId]="uni.id">
                 </app-restaurants-universitaires>
               </div>
+              
+              <ng-container *ngIf="filtreActuel() !== 'emploi'">
+                <div *ngIf="isExpanded(v) && v.lat !== undefined && v.lng !== undefined">
+                  <app-meteo-apercu [meteo]="meteoCache[v.code]"></app-meteo-apercu>
+                </div>
+              </ng-container>
             </div>
           </div>
         </div>

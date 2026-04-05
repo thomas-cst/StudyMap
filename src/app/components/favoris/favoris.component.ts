@@ -52,4 +52,5 @@ export class FavorisComponent {
   onFiltreChange(filtre: string) {
     this.filtreActuel.set(filtre);
   }
+
 }

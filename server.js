@@ -41,6 +41,14 @@ app.use('/api', favorisRoutes);
 const travelTimeRoutes = require('./routes/travelTime');
 app.use('/api', travelTimeRoutes);
 
+// Routes emploi
+const emploiRoutes = require('./routes/emploi');
+app.use('/api', emploiRoutes);
+
+// Routes lieux festifs
+const lieuxFestifsRoutes = require('./routes/lieuxFestifs');
+app.use('/api', lieuxFestifsRoutes);
+
 // ====================================================
 // HEALTH CHECK
 // ====================================================
@@ -92,6 +100,7 @@ Available routes:
   GET  /api/favorites/:email  - Favoris d'un utilisateur
   POST /api/favorites/add      - Ajouter un favori
   DEL  /api/favorites/remove/:email/:nomVille - Supprimer un favori
+  GET  /api/lieux-festifs      - Liste des lieux festifs
 
 Quick start:
   1. POST /api/villes/sync      - Initialiser les villes
