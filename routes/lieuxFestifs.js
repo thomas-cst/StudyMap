@@ -9,7 +9,6 @@ try {
   // Lecture du fichier JSON contenant les données festives
   const data = fs.readFileSync(path.join(__dirname, '../villes_festives.json'), 'utf-8');
   villesFestives = JSON.parse(data);
-  console.log('Cache lieux festifs chargé:', Object.keys(villesFestives).length, 'villes');
 } catch (e) {
   console.warn('Impossible de charger villes_festives.json:', e.message);
 }

@@ -23,7 +23,6 @@ router.get('/universites', async (req, res) => {
       });
     }
 
-    console.log(`✓ ${universites.length} universités retournées`);
     res.json(universites);
   } catch (err) {
     console.error('ERROR universites:', err.message);

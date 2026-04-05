@@ -24,12 +24,7 @@ export class LoyerService {
       map(res => {
         if (!res || res.loyer_m2 == null) return {};
         const m2 = res.loyer_m2;
-        console.log(`[LoyerService] loyer_m2 reçu pour ${nomVille} :`, m2); // LOG DIAGNOSTIC
-        return {
-          studio: Math.round(m2 * this.SURFACES.studio),
-          t2:     Math.round(m2 * this.SURFACES.t2),
-          t3:     Math.round(m2 * this.SURFACES.t3),
-        };
+        return { studio: Math.round(m2 * this.SURFACES.studio),t2: Math.round(m2 * this.SURFACES.t2),t3: Math.round(m2 * this.SURFACES.t3)};
       }),
       catchError(() => of({}))
     );

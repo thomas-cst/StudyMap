@@ -37,14 +37,14 @@ async function fetchLoyerMoyenCSV(nomVille, codeInsee = null) {
   const loyers = await loadLoyersCSV();
   const normalize = s => s?.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
   const nomNorm = normalize(nomVille);
- 
-  if (codeInsee) {
-    const byInsee = loyers.filter(row => row.INSEE_C === codeInsee);
-    if (byInsee.length > 0) {
-      const prix = byInsee.map(r => parseFloat(r.loypredm2?.replace(',', '.'))).filter(v => !isNaN(v));
-      if (prix.length > 0) return Math.round(prix.reduce((a, b) => a + b, 0) / prix.length * 100) / 100;
-    }
+
+  const byNom = loyers.filter(row => normalize(row.LIBGEO) === nomNorm);
+  if (byNom.length > 0) {
+    const prix = byNom.map(r => parseFloat(r.loypredm2?.replace(',', '.'))).filter(v => !isNaN(v));
+    if (prix.length > 0)
+      return Math.round(prix.reduce((a, b) => a + b, 0) / prix.length * 100) / 100;
   }
+  return null;
 }
 /**
  * Service de données des villes

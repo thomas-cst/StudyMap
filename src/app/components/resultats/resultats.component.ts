@@ -113,7 +113,6 @@ export class ResultatsComponent implements OnChanges, OnInit {
     this.userLocationService.requestLocation();
 
     this.emploiService.getClassementEmploi().subscribe(data => {
-      console.log('Données emploi reçues :', data);
       this.classementEmploi.set(data);
     });
   }
@@ -263,8 +262,6 @@ export class ResultatsComponent implements OnChanges, OnInit {
 
     // Filtre "Emploi et Attractivité"
     if (currentFiltre === 'emploi') {
-        console.log('dataEmploi:', dataEmploi);
-        console.log('villes:', this.villes().map(v => v.nom));
         if (!dataEmploi) {
             return [];
         }
@@ -282,39 +279,41 @@ export class ResultatsComponent implements OnChanges, OnInit {
     }
 
     // Filtre "Loyer le moins cher"
-    if (
-      typeof currentFiltre === 'object' &&
-      currentFiltre !== null &&
-      'type' in currentFiltre &&
-      currentFiltre.type === 'budget'
-    ) {
+    if (typeof currentFiltre === 'object' && currentFiltre !== null && 'type' in currentFiltre && currentFiltre.type === 'budget') {
       const min = typeof currentFiltre.min === 'number' ? currentFiltre.min : 0;
       const max = typeof currentFiltre.max === 'number' ? currentFiltre.max : 5000;
       const surface = typeof currentFiltre.surface === 'number' ? currentFiltre.surface : 50;
-      this.loyerRefresh();
       list.forEach(v => {
-        const cached = this.loyerCache()[v.code];
+        const cached = this.loyerCache()[v.nom];
+
         const hasData = cached && (
           cached.studio !== undefined || cached.t2 !== undefined || cached.t3 !== undefined
         );
         if (!hasData) {
-          this.villesService.getLoyerMoyen(v.nom, v.code).subscribe(val => {
-            this.loyerCache[v.nom] = val;
-            this.loyerRefresh.set(this.loyerRefresh() + 1); // force le recalcul
+          this.loyerService.getLoyerVille(v.nom).subscribe(data => {
+            this.loyerCache.update(c => ({ ...c, [v.nom]: data }));
+            this.loyerRefresh.set(this.loyerRefresh() + 1);
           });
         }
       });
-      // Filtrer selon l'intervalle choisi sur le loyer total
+
+      const getPrix = (nom: string): number | undefined => {
+        const c = this.loyerCache()[nom];
+        if (!c) return undefined;
+        if (surface <= 35) return c.studio;
+        if (surface <= 55) return c.t2;
+        return c.t3;
+      };
+
       const filteredList = list.filter(v => {
-        const loyerM2 = getPrix(v.code);
-        if (loyerM2 === undefined) return true;
-        const loyerTotal = loyerM2 * surface;
-        return loyerTotal >= min && loyerTotal <= max;
+        const loyerMensuel = getPrix(v.nom);
+        if (loyerMensuel === undefined) return true;
+        return loyerMensuel >= min && loyerMensuel <= max;
       });
-      // Trie croissant (loyer total le moins cher en premier)
+
       return filteredList.slice().sort((a, b) => {
-        const aLoyer = (getPrix(a.code) ?? Infinity) * surface;
-        const bLoyer = (getPrix(b.code) ?? Infinity) * surface;
+        const aLoyer = getPrix(a.nom) ?? Infinity;
+        const bLoyer = getPrix(b.nom) ?? Infinity;
         return aLoyer - bLoyer;
       });
     }
@@ -414,7 +413,6 @@ export class ResultatsComponent implements OnChanges, OnInit {
       this.villesService.getCoordinatesForVille(ville.nom, ville.code)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(coords => {
-          console.log(`🗺️ Zoom vers ${ville.nom}:`, coords);
           this.villes.update(villes =>
             villes.map(v => v.nom === ville.nom ? { ...v, lat: coords.lat, lng: coords.lng } : v)
           );
@@ -523,10 +521,11 @@ export class ResultatsComponent implements OnChanges, OnInit {
       return `${Math.round(d)} km`;
     }
     if (typeof f === 'object' && f?.type === 'budget') {
-      const loyer = this.loyerCache[v.nom];
-      if (loyer == null) return null;
       const surface = f.surface ?? 50;
-      return `${Math.round(loyer * surface)} €/mois`;
+      const cache = this.loyerCache()[v.nom];
+      const loyer = surface <= 35 ? cache?.studio : surface <= 55 ? cache?.t2 : cache?.t3;
+      if (loyer == null) return null;
+      return `${loyer} €/mois`;
     }
     if (f === 'transport') {
       if (v.score_transport != null) return `Score ${v.score_transport}`;

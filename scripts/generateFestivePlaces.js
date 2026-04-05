@@ -39,8 +39,6 @@ async function getFestiveCount(ville) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       timeout: 30000
     });
-    // Log de la réponse brute
-    console.log(`Réponse Overpass pour ${ville}:`, JSON.stringify(overpassRes.data));
     if (!overpassRes.data || typeof overpassRes.data !== 'object' || !Array.isArray(overpassRes.data.elements)) {
       console.warn(`Réponse Overpass inattendue pour ${ville}`);
       return 0;
@@ -52,14 +50,11 @@ async function getFestiveCount(ville) {
       if (tags && typeof tags.total === 'string') {
         count = parseInt(tags.total, 10);
         if (!isNaN(count)) {
-          console.log(`Lieux festifs pour ${ville} (via tags.total): ${count}`);
           return count;
         }
       }
-      console.warn(`Champ 'count' ou 'tags.total' manquant ou invalide pour ${ville} (elements: ${JSON.stringify(overpassRes.data.elements)})`);
       return 0;
     }
-    console.log(`Lieux festifs pour ${ville}: ${count}`);
     return count;
   } catch (err) {
     console.warn(`Erreur pour ${ville}:`, err.message);
@@ -71,14 +66,11 @@ async function getFestiveCount(ville) {
 (async () => {
   for (const ville of villes) {
     if (villesFestives[ville] && villesFestives[ville] > 0) {
-      console.log(`Déjà OK: ${ville} (${villesFestives[ville]})`);
       continue;
     }
-    console.log(`Traitement: ${ville}`);
     villesFestives[ville] = await getFestiveCount(ville);
     // Attendre 10s entre chaque requête pour éviter le rate limit
     await new Promise(r => setTimeout(r, 10000));
     fs.writeFileSync('villes_festives.json', JSON.stringify(villesFestives, null, 2));
   }
-  console.log('Fichier villes_festives.json mis à jour.');
 })();
