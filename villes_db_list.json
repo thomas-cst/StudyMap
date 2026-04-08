@@ -1,0 +1,13 @@
+Connexion OK, exemple de données: [
+  {
+    id: 97,
+    nom_ville: 'Champs-sur-Marne',
+    code_insee: '77083',
+    latitude: 48.83915,
+    longitude: 2.58747,
+    url_image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Champs-sur-Marne_-_Church_-_2.jpg/960px-Champs-sur-Marne_-_Church_-_2.jpg',
+    created_at: '2026-03-19T08:31:42.477604',
+    nb_hab: 24663,
+    nb_etu: 15057
+  }
+]

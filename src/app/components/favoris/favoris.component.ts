@@ -61,4 +61,5 @@ export class FavorisComponent {
     }
     this.filtreActuel.set(filtre);
   }
+
 }

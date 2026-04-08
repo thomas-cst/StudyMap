@@ -41,6 +41,14 @@ app.use('/api', favorisRoutes);
 const travelTimeRoutes = require('./routes/travelTime');
 app.use('/api', travelTimeRoutes);
 
+// Routes emploi
+const emploiRoutes = require('./routes/emploi');
+app.use('/api', emploiRoutes);
+
+// Routes lieux festifs
+const lieuxFestifsRoutes = require('./routes/lieuxFestifs');
+app.use('/api', lieuxFestifsRoutes);
+
 // ====================================================
 // HEALTH CHECK
 // ====================================================

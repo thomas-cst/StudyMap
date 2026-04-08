@@ -196,17 +196,13 @@ export class VillesService {
   }
 
   /**
-   * Récupère l'ensoleillement moyen du dernier mois complet (en heures) pour une ville via Open-Meteo
-   * @param lat Latitude
-   * @param lng Longitude
-   * @returns Observable<number> (ensoleillement total du mois en heures)
+   * Récupère l'ensoleillement moyen du dernier mois complet pour une ville via Open-Meteo
    */
   getMonthlySunshine(lat: number, lng: number): Observable<number> {
-    // Calculer le dernier mois complet
     const now = new Date();
     let year = now.getFullYear();
-    let month = now.getMonth(); // 0 = janvier, donc le mois précédent
-    if (month === 0) { // Si janvier, prendre décembre de l'année précédente
+    let month = now.getMonth();
+    if (month === 0) {
       month = 12;
       year--;
     }
@@ -234,11 +230,6 @@ export class VillesService {
   }
 
   // Récupère le loyer moyen d'une ville (prix/m²)
-  /**
-   * Récupère le loyer moyen d'une ville (prix/m²) via le backend
-   * @param nomVille Nom de la ville
-   * @param codeInsee (optionnel) Code INSEE de la ville
-   */
   getLoyerMoyen(nomVille: string, codeInsee?: string): Observable<number|null> {
     let url = `/api/loyer/${encodeURIComponent(nomVille)}`;
     if (codeInsee) {
@@ -248,5 +239,22 @@ export class VillesService {
       map(res => res.loyer_m2 ?? null),
       catchError(() => of(null))
     );
+  }
+
+  /**
+   * Récupère le nombre de lieux festifs pour une ville
+   */
+  getLieuxFestifs(nomVille: string): Observable<number> {
+    let params: any = {};
+    const ville = this.villesCache?.find(v => v.nom === nomVille);
+    if (ville && ville.lat !== undefined && ville.lng !== undefined) {
+      params.lat = ville.lat;
+      params.lng = ville.lng;
+    }
+    return this.http.get<{ lieux_festifs: number }>(`/api/lieux-festifs/${encodeURIComponent(nomVille)}`, { params })
+      .pipe(
+        map(res => res.lieux_festifs ?? 0),
+        catchError(() => of(0))
+      );
   }
 }

@@ -27,8 +27,6 @@ router.get('/favorites/:email', async (req, res) => {
       lat: v.latitude,
       lng: v.longitude
     }));
-
-    console.log(`[FAVORIS] ${mapped.length} favoris charges pour ${email}`);
     res.json({ favoris: mapped });
   } catch (err) {
     console.error('[FAVORIS] Erreur chargement:', err.message);
@@ -47,7 +45,6 @@ router.post('/favorites/add', async (req, res) => {
 
     const result = await favorisService.addFavoris(email, nom_ville);
 
-    console.log(`[FAVORIS] Favori ajoute: ${nom_ville} pour ${email}`);
     res.json({ id: result.id, message: 'Favori ajoute' });
   } catch (err) {
     // Gerer la violation de contrainte unique (ville deja en favoris)
@@ -67,7 +64,6 @@ router.delete('/favorites/remove/:email/:nomVille', async (req, res) => {
 
     await favorisService.removeFavoris(email, nomVille);
 
-    console.log(`[FAVORIS] Favori supprime: ${nomVille} pour ${email}`);
     res.json({ message: 'Favori supprime' });
   } catch (err) {
     console.error('[FAVORIS] Erreur suppression:', err.message);

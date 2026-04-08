@@ -65,7 +65,6 @@ export class FiltreComponent {
         const value = input.value;
         this.filtreSelectionne = value;
 
-        // Gestion du filtre itineraire avec le service mutualisé (ancienne branche)
         if (value === 'itineraire') {
             this.userLocationService.location$.subscribe((loc: any) => {
                 if (loc) {
@@ -94,7 +93,6 @@ export class FiltreComponent {
                 }
             );
         } else if (this.filtreSelectionne === 'budget') {
-            // Transmettre un objet JSON avec le filtre, les bornes et la surface
             const filtreBudget = {
                 type: 'budget',
                 min: this.budgetMin(),

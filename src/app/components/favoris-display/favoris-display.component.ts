@@ -21,6 +21,8 @@ import { ItineraireService } from '../../services/itineraire.service';
 import { UserLocationService, UserLocation } from '../../services/user-location.service';
 import { AuthService } from '../../services/auth.service';
 import { AuthPopupService } from '../../services/auth-popup.service';
+import { EmploiService, VilleEmploi } from '../../services/emploi.service';
+import { LoyerService } from '../../services/loyer.service';
 
 @Component({
   selector: 'app-favoris-display', 
@@ -61,6 +63,13 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   /** Reference de destruction pour nettoyer automatiquement les subscriptions RxJS */
   private destroyRef = inject(DestroyRef);
 
+  /**Services pour les filtres*/
+  private emploiService = inject(EmploiService);
+  private loyerService = inject(LoyerService);
+  public classementEmploi = signal<VilleEmploi[] | null>(null);
+  private lieuxFestifsCache: { [key: string]: number } = {};
+  private lieuxFestifsRefresh = signal(0);
+
   /** Liste des villes favorites, recuperee dynamiquement depuis le service */
   villes = computed(() => this.favorisService.favoris());
 
@@ -90,6 +99,21 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
     this.userLocationService.location$.subscribe(loc => this.userLocation.set(loc));
     this.userLocationService.error$.subscribe(err => this.geoError.set(err));
     this.userLocationService.requestLocation();
+    this.emploiService.getClassementEmploi().subscribe(data => this.classementEmploi.set(data));
+  }
+
+  constructor() {
+    effect(() => {
+      const favoris = this.villes();
+      if (favoris.length === 0) return;
+      favoris.forEach(v => {
+        if (this.loyerCache[v.nom] === undefined) {
+          this.loyerService.getLoyerVille(v.nom).subscribe(data => {
+          this.loyerCache[v.nom] = data ?? null;
+        });
+        }
+      });
+    });
   }
 
   /** sync les changements d'Input avec le signal local */
@@ -104,7 +128,7 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   }
 
   // Cache loyer moyen pour le filtre budget
-  private loyerCache: { [key: string]: number | null } = {};
+  private loyerCache: { [key: string]: { studio?: number, t2?: number, t3?: number } | null } = {};
   private loyerRefresh = signal(0);
 
   /** Favoris filtres et tries selon la recherche et le filtre actif */
@@ -126,28 +150,37 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
     }
 
     // Filtre "Loyer le moins cher" (budget)
-    if (typeof currentFiltre === 'object' && currentFiltre !== null && currentFiltre.type === 'budget') {
-      const min = currentFiltre.min ?? 0;
-      const max = currentFiltre.max ?? 5000;
-      const surface = currentFiltre.surface ?? 50;
-      this.loyerRefresh();
-      list.forEach(v => {
-        if (this.loyerCache[v.nom] === undefined) {
-          this.villesService.getLoyerMoyen(v.nom, v.code).subscribe(val => {
-            this.loyerCache[v.nom] = val;
-            this.loyerRefresh.set(this.loyerRefresh() + 1);
-          });
-        }
+    // Filtre "Loyer le moins cher" (budget)
+if (typeof currentFiltre === 'object' && currentFiltre !== null && currentFiltre.type === 'budget') {
+  const min = currentFiltre.min ?? 0;
+  const max = currentFiltre.max ?? 5000;
+  const surface = currentFiltre.surface ?? 50;
+
+  list.forEach(v => {
+    if (this.loyerCache[v.nom] === undefined) {
+      this.loyerService.getLoyerVille(v.nom).subscribe(data => {
+        this.loyerCache[v.nom] = data ?? null; // ← stocke l'objet { studio, t2, t3 }
+        this.loyerRefresh.set(this.loyerRefresh() + 1);
       });
-      return list
-        .filter(v => {
-          const loyer = this.loyerCache[v.nom];
-          if (loyer === null || loyer === undefined) return false;
-          const total = loyer * surface;
-          return total >= min && total <= max;
-        })
-        .sort((a, b) => ((this.loyerCache[a.nom] ?? Infinity) * surface) - ((this.loyerCache[b.nom] ?? Infinity) * surface));
     }
+  });
+
+  const getLoyer = (nom: string) => {
+    const c = this.loyerCache[nom];
+    if (!c) return undefined;
+    if (surface <= 35) return c.studio;
+    if (surface <= 55) return c.t2;
+    return c.t3;
+  };
+
+  return list
+    .filter(v => {
+      const loyer = getLoyer(v.nom);
+      if (loyer === null || loyer === undefined) return true; // inclure provisoirement
+      return loyer >= min && loyer <= max;
+    })
+    .sort((a, b) => (getLoyer(a.nom) ?? Infinity) - (getLoyer(b.nom) ?? Infinity));
+}
 
     // Filtre "Qualité des transports"
     if (currentFiltre === 'transport') {
@@ -156,6 +189,35 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
       withScore.sort((a, b) => (b.score_transport ?? 0) - (a.score_transport ?? 0));
       withoutScore.sort((a, b) => (b.nb_lignes_transport ?? 0) - (a.nb_lignes_transport ?? 0));
       return [...withScore, ...withoutScore];
+    }
+
+    // Filtre "Emploi et Attractivité"
+    if (currentFiltre === 'emploi') {
+      const dataEmploi = this.classementEmploi();
+      if (!dataEmploi) return list;
+      const normalize = (str: string) =>
+        str.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return [...list].sort((a, b) => {
+        const infoA = dataEmploi.find(e => normalize(e.ville) === normalize(a.nom));
+        const infoB = dataEmploi.find(e => normalize(e.ville) === normalize(b.nom));
+        return (infoB ? Number(infoB.nbobs_com) : 0) - (infoA ? Number(infoA.nbobs_com) : 0);
+      });
+    }
+
+    // Filtre "Bars et Vie nocturne"
+    if (currentFiltre === 'vieNocturne') {
+      this.lieuxFestifsRefresh();
+      list.forEach(v => {
+        if (this.lieuxFestifsCache[v.nom] === undefined) {
+          this.villesService.getLieuxFestifs(v.nom).subscribe(val => {
+            this.lieuxFestifsCache[v.nom] = val;
+            this.lieuxFestifsRefresh.set(this.lieuxFestifsRefresh() + 1);
+          });
+        }
+      });
+      return [...list].sort((a, b) =>
+        (this.lieuxFestifsCache[b.nom] || 0) - (this.lieuxFestifsCache[a.nom] || 0)
+      );
     }
 
     // Par défaut : trier par consultées récemment
@@ -182,15 +244,30 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
       return `${Math.round(d)} km`;
     }
     if (typeof f === 'object' && f?.type === 'budget') {
-      const loyer = this.loyerCache[v.nom];
-      if (loyer == null) return null;
       const surface = f.surface ?? 50;
-      return `${Math.round(loyer * surface)} €/mois`;
+      const c = this.loyerCache[v.nom];
+      if (!c) return null;
+      const loyer = surface <= 35 ? c.studio : surface <= 55 ? c.t2 : c.t3;
+      if (loyer == null) return null;
+      return `${loyer} €/mois`;
     }
     if (f === 'transport') {
       if (v.score_transport != null) return `Score ${v.score_transport}`;
       if (v.nb_lignes_transport != null) return `${v.nb_lignes_transport} lignes`;
       return null;
+    }
+    if (f === 'emploi') {
+      const dataEmploi = this.classementEmploi();
+      if (!dataEmploi) return null;
+      const normalize = (str: string) =>
+        str.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const info = dataEmploi.find(e => normalize(e.ville) === normalize(v.nom));
+      return info ? `${info.nbobs_com.toLocaleString()} offres` : null;
+    }
+
+    if (f === 'vieNocturne') {
+      const nb = this.lieuxFestifsCache[v.nom];
+      return nb !== undefined ? `${nb} lieux festifs` : null;
     }
     return null;
   }
@@ -240,11 +317,9 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
       this.mapSyncService.zoomToVille(ville.nom, ville.lat, ville.lng);
     } else {
       // Sinon, récupérer les coordonnées via le code INSEE
-      console.log(`INFO: Récupération coordonnées pour ${ville.nom}`);
       this.villesService.getCoordinatesForVille(ville.nom, ville.code)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(coords => {
-          console.log(`INFO: Zoom vers ${ville.nom}`);
           this.mapSyncService.zoomToVille(ville.nom, coords.lat, coords.lng);
         });
     }
