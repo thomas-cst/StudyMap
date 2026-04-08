@@ -6,6 +6,7 @@
  * - Suivre les villes recemment consultees (10 max)
  */
 import { Injectable, signal } from '@angular/core';
+import { Ville } from './villes.service';
 
 /** Interface representant une cible de zoom sur la carte */
 export interface ZoomTarget {
@@ -23,6 +24,14 @@ export class MapSyncService {
 
   /** Signal contenant les codes INSEE des villes recemment consultees (max 10) */
   recentlyViewed = signal<string[]>([]);
+
+  /** Ville actuellement sélectionnée (partagée entre tous les onglets) */
+  selectedVille = signal<Ville | null>(null);
+
+  /** Sélectionne une ville (ou la désélectionne si null) */
+  selectVille(ville: Ville | null) {
+    this.selectedVille.set(ville);
+  }
 
   /** Ajoute un code INSEE aux villes recemment consultees (garde les 10 dernieres) */
   addToRecentlyViewed(codeInsee: string) {

@@ -151,6 +151,29 @@ export class ResultatsComponent implements OnChanges, OnInit {
   }
 
   constructor() {
+    // Réagir à une sélection de ville depuis un autre onglet
+    effect(() => {
+      const shared = this.mapSyncService.selectedVille();
+      if (shared && shared.code !== this.expandedVille()?.code) {
+        // Chercher la ville dans notre liste
+        const found = this.villes().find(v => v.code === shared.code);
+        if (found) {
+          this.expandedVille.set(found);
+          this.expandedUniversiteId.set(null);
+          this.lastZoomedVille.set(found.code);
+          this.isManualSelection.set(true);
+          this.querySignal.set('');
+          this.expandAndZoom(found);
+          this.loadItineraire(found);
+          this.loadUniversites(found);
+          this.loadMeteo(found);
+          this.loadLoyer(found);
+        }
+      } else if (!shared) {
+        this.expandedVille.set(null);
+      }
+    });
+
     // Auto-expand la ville qui match la recherche
     effect(() => {
       const q = this.querySignal().trim().toLowerCase();
@@ -398,9 +421,13 @@ export class ResultatsComponent implements OnChanges, OnInit {
   /** Agrandit la carte ville, scrolle vers le haut et zoome sur la carte Leaflet */
   private expandAndZoom(ville: Ville) {
     setTimeout(() => {
-      const el = document.querySelector('.resultats');
+      const el = document.querySelector('.ville-card.expanded');
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      else window.scrollTo({ top: 0, behavior: 'smooth' });
+      else {
+        const container = document.querySelector('.resultats');
+        if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }, 100);
 
     // Ajouter aux récemment consultées
@@ -432,6 +459,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
       this.searchSyncService.clearSearch(); // Demander au parent de vider l'input
       this.itineraire.set(null);
       this.itineraireError.set(null);
+      this.mapSyncService.selectVille(null);
     } else {
       // Ouvrir une nouvelle ville
       this.expandedVille.set(ville);
@@ -444,6 +472,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
       this.loadUniversites(ville);
       this.loadMeteo(ville);
       this.loadLoyer(ville);
+      this.mapSyncService.selectVille(ville);
     }
   }
 

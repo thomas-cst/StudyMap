@@ -103,6 +103,26 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   }
 
   constructor() {
+    // Réagir à une sélection de ville depuis un autre onglet
+    effect(() => {
+      const shared = this.mapSyncService.selectedVille();
+      if (shared && shared.code !== this.expandedVille()?.code) {
+        const found = this.villes().find(v => v.code === shared.code);
+        if (found) {
+          this.expandedVille.set(found);
+          this.expandedUniversiteId.set(null);
+          this.lastZoomedVille.set(found.code);
+          this.isManualSelection.set(true);
+          this.querySignal.set('');
+          this.expandAndZoom(found);
+          this.loadItineraire(found);
+          this.loadUniversites(found);
+        }
+      } else if (!shared) {
+        this.expandedVille.set(null);
+      }
+    });
+
     effect(() => {
       const favoris = this.villes();
       if (favoris.length === 0) return;
@@ -298,14 +318,13 @@ if (typeof currentFiltre === 'object' && currentFiltre !== null && currentFiltre
 
   /** Agrandit la carte d'une ville et zoome sur sa position sur la carte */
   private expandAndZoom(ville: Ville) {
-    // Remonter le scroll vers le haut de la liste des favoris
-    // Un delai est necessaire pour laisser le DOM se mettre a jour
     setTimeout(() => {
-      const favorisElement = document.querySelector('.favoris-display');
-      if (favorisElement) {
-        favorisElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      const el = document.querySelector('.ville-card.expanded');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      else {
+        const container = document.querySelector('.favoris-display');
+        if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }, 100);
     
@@ -359,6 +378,7 @@ if (typeof currentFiltre === 'object' && currentFiltre !== null && currentFiltre
       this.searchSyncService.clearSearch();
       this.itineraire.set(null);
       this.itineraireError.set(null);
+      this.mapSyncService.selectVille(null);
     } else {
       // Ouvrir une nouvelle ville
       this.expandedVille.set(ville);
@@ -369,6 +389,7 @@ if (typeof currentFiltre === 'object' && currentFiltre !== null && currentFiltre
       this.expandAndZoom(ville);
       this.loadItineraire(ville);
       this.loadUniversites(ville);
+      this.mapSyncService.selectVille(ville);
     }
   }
 
