@@ -10,17 +10,22 @@ CREATE TABLE users (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 2. Table des villes
+-- Table des villes — version complète avec transport
 CREATE TABLE villes (
-  id SERIAL PRIMARY KEY,
-  nom_ville TEXT NOT NULL,
-  code_insee TEXT,
-  latitude DOUBLE PRECISION,
-  longitude DOUBLE PRECISION,
-  url_image TEXT,
-  nb_hab INTEGER,
-  nb_etu INTEGER,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  id                    SERIAL PRIMARY KEY,
+  nom_ville             TEXT NOT NULL,
+  code_insee            TEXT,
+  latitude              DOUBLE PRECISION,
+  longitude             DOUBLE PRECISION,
+  url_image             TEXT,
+  nb_hab                INTEGER,
+  nb_etu                INTEGER,
+  -- Colonnes transport (remplies par scripts/transport-score.js ou les UPDATEs ci-dessus)
+  score_transport       FLOAT    DEFAULT NULL,
+  nb_lignes_transport   INTEGER  DEFAULT NULL,
+  nb_arrets_transport   INTEGER  DEFAULT NULL,
+  km_lignes_transport   FLOAT    DEFAULT NULL,
+  created_at            TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- 3. Table des universités
@@ -75,3 +80,4 @@ CREATE TABLE favoris (
   universite_id INTEGER REFERENCES universites(id) ON DELETE CASCADE,
   added_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
