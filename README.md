@@ -132,11 +132,22 @@ curl -X POST http://localhost:3000/api/universites/sync
 curl -X POST http://localhost:3000/api/restau-univ/sync
 ```
 
+Pour peupler les données concernant les transports :
+
+Rendez-vous sur votre Dashboard Supabase > SQL Editor.
+
+Cliquez sur "New Query".
+
+Ouvrez le fichier database/peuplementScore.sql situé dans ce projet.
+
+Copiez le code, collez-le dans l'éditeur Supabase et cliquez sur Run.
+
+
 📂 Structure du Projet
 
 ```plaintext
 studymap/
-├── database/           # Scripts SQL d'initialisation (schema.sql)
+├── database/           # Scripts SQL d'initialisation (schema.sql, peuplementScore.sql)
 ├── src/                # Code source Angular (Frontend)
 │   ├── app/            # Composants et Services
 │   └── environments/   # Configuration (URL API, Clés Publiques)
