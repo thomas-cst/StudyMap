@@ -561,6 +561,19 @@ export class ResultatsComponent implements OnChanges, OnInit {
       if (v.nb_lignes_transport != null) return `${v.nb_lignes_transport} lignes`;
       return null;
     }
+    if (f === 'emploi') {
+      const dataEmploi = this.classementEmploi();
+      if (!dataEmploi) return null;
+      const normalize = (str: string) =>
+        str.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const info = dataEmploi.find(e => normalize(e.ville) === normalize(v.nom));
+      return info ? `${info.nbobs_com.toLocaleString()} offres` : null;
+    }
+
+    if (f === 'vieNocturne') {
+      const nb = this.lieuxFestifsCache[v.nom];
+      return nb !== undefined ? `${nb} lieux festifs` : null;
+    }
     return null;
   }
 
