@@ -20,12 +20,17 @@ router.get('/favorites/:email', async (req, res) => {
 
     // Mapper le format BDD (nom_ville, url_image...) vers le format Ville du frontend
     const mapped = villes.map(v => ({
+      id: v.id,
       id_ville: v.id,
       nom: v.nom_ville,
       code: v.code_insee || '',
       imageUrl: v.url_image || '',
       lat: v.latitude,
-      lng: v.longitude
+      lng: v.longitude,
+      score_transport: v.score_transport ?? null,
+      nb_lignes_transport: v.nb_lignes_transport ?? null,
+      nb_hab: v.nb_hab ?? null,
+      nb_etu: v.nb_etu ?? null,
     }));
     res.json({ favoris: mapped });
   } catch (err) {

@@ -23,11 +23,13 @@ import { AuthService } from '../../services/auth.service';
 import { AuthPopupService } from '../../services/auth-popup.service';
 import { EmploiService, VilleEmploi } from '../../services/emploi.service';
 import { LoyerService } from '../../services/loyer.service';
+import { MeteoService } from '../../services/meteo.service';
+import { MeteoApercuComponent } from '../meteo-apercu/meteo-apercu.component';
 
 @Component({
   selector: 'app-favoris-display', 
   standalone: true,        
-  imports: [CommonModule, RestaurantsUniversitairesComponent, ItineraireCardComponent],
+  imports: [CommonModule, RestaurantsUniversitairesComponent, ItineraireCardComponent, MeteoApercuComponent],
   templateUrl: './favoris-display.component.html',
   styleUrl: './favoris-display.component.scss'
 })
@@ -66,6 +68,8 @@ export class FavorisDisplayComponent implements OnChanges, OnInit {
   /**Services pour les filtres*/
   private emploiService = inject(EmploiService);
   private loyerService = inject(LoyerService);
+  private meteoService = inject(MeteoService);
+  meteoCache: { [key: string]: any } = {};
   public classementEmploi = signal<VilleEmploi[] | null>(null);
   private lieuxFestifsCache: { [key: string]: number } = {};
   private lieuxFestifsRefresh = signal(0);
@@ -389,8 +393,18 @@ if (typeof currentFiltre === 'object' && currentFiltre !== null && currentFiltre
       this.expandAndZoom(ville);
       this.loadItineraire(ville);
       this.loadUniversites(ville);
+      this.loadMeteo(ville);
       this.mapSyncService.selectVille(ville);
     }
+  }
+
+  /** Charge la météo pour une ville et la met en cache */
+  loadMeteo(ville: Ville) {
+    if (this.meteoCache[ville.code] || ville.lat === undefined || ville.lng === undefined) return;
+    this.meteoService.getMeteoSemaine(ville.lat, ville.lng).subscribe({
+      next: (data) => { this.meteoCache[ville.code] = data; },
+      error: () => { this.meteoCache[ville.code] = null; }
+    });
   }
 
   /** Charge les universités d'une ville */

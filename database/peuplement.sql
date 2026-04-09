@@ -2,6 +2,77 @@
 -- DONNÉES INITIALES : Scores transport par ville
 -- ==========================================================
 
+-- ==========================================================
+-- POPULATION (source : INSEE recensement 2021)
+-- ==========================================================
+
+-- Mégapoles & Grandes Métropoles
+UPDATE villes SET nb_hab = 2133111 WHERE nom_ville = 'Paris';
+UPDATE villes SET nb_hab = 522969  WHERE nom_ville = 'Lyon';
+UPDATE villes SET nb_hab = 153020  WHERE nom_ville = 'Villeurbanne';
+UPDATE villes SET nb_hab = 873076  WHERE nom_ville = 'Marseille';
+UPDATE villes SET nb_hab = 493465  WHERE nom_ville = 'Toulouse';
+UPDATE villes SET nb_hab = 263068  WHERE nom_ville = 'Bordeaux';
+UPDATE villes SET nb_hab = 236234  WHERE nom_ville = 'Lille';
+UPDATE villes SET nb_hab = 290576  WHERE nom_ville = 'Strasbourg';
+UPDATE villes SET nb_hab = 323204  WHERE nom_ville = 'Nantes';
+
+-- Île-de-France
+UPDATE villes SET nb_hab = 95132  WHERE nom_ville = 'Nanterre';
+UPDATE villes SET nb_hab = 91428  WHERE nom_ville = 'Créteil';
+UPDATE villes SET nb_hab = 85318  WHERE nom_ville = 'Versailles';
+UPDATE villes SET nb_hab = 66522  WHERE nom_ville = 'Cergy';
+UPDATE villes SET nb_hab = 70063  WHERE nom_ville = 'Évry-Courcouronnes';
+UPDATE villes SET nb_hab = 93066  WHERE nom_ville = 'Saint-Denis';
+UPDATE villes SET nb_hab = 25521  WHERE nom_ville = 'Champs-sur-Marne';
+UPDATE villes SET nb_hab = 21903  WHERE nom_ville = 'Gif-sur-Yvette';
+UPDATE villes SET nb_hab = 14500  WHERE nom_ville = 'Villetaneuse';
+
+-- Grandes Villes
+UPDATE villes SET nb_hab = 225081  WHERE nom_ville = 'Rennes';
+UPDATE villes SET nb_hab = 300950  WHERE nom_ville = 'Montpellier';
+UPDATE villes SET nb_hab = 156920  WHERE nom_ville = 'Dijon';
+UPDATE villes SET nb_hab = 156708  WHERE nom_ville = 'Angers';
+UPDATE villes SET nb_hab = 136463  WHERE nom_ville = 'Tours';
+UPDATE villes SET nb_hab = 144817  WHERE nom_ville = 'Clermont-Ferrand';
+UPDATE villes SET nb_hab = 342669  WHERE nom_ville = 'Nice';
+UPDATE villes SET nb_hab = 171924  WHERE nom_ville = 'Saint-Étienne';
+UPDATE villes SET nb_hab = 183042  WHERE nom_ville = 'Reims';
+UPDATE villes SET nb_hab = 116963  WHERE nom_ville = 'Orléans';
+UPDATE villes SET nb_hab = 143599  WHERE nom_ville = 'Le Mans';
+UPDATE villes SET nb_hab = 172073  WHERE nom_ville = 'Le Havre';
+UPDATE villes SET nb_hab = 130995  WHERE nom_ville = 'Limoges';
+UPDATE villes SET nb_hab = 133448  WHERE nom_ville = 'Amiens';
+UPDATE villes SET nb_hab = 140064  WHERE nom_ville = 'Brest';
+UPDATE villes SET nb_hab = 105512  WHERE nom_ville = 'Caen';
+UPDATE villes SET nb_hab = 116403  WHERE nom_ville = 'Besançon';
+UPDATE villes SET nb_hab = 157017  WHERE nom_ville = 'Nîmes';
+UPDATE villes SET nb_hab = 121875  WHERE nom_ville = 'Perpignan';
+UPDATE villes SET nb_hab = 110359  WHERE nom_ville = 'Mulhouse';
+UPDATE villes SET nb_hab = 91729   WHERE nom_ville = 'Avignon';
+UPDATE villes SET nb_hab = 88291   WHERE nom_ville = 'Poitiers';
+UPDATE villes SET nb_hab = 78994   WHERE nom_ville = 'La Rochelle';
+UPDATE villes SET nb_hab = 77130   WHERE nom_ville = 'Pau';
+UPDATE villes SET nb_hab = 60561   WHERE nom_ville = 'Chambéry';
+UPDATE villes SET nb_hab = 56307   WHERE nom_ville = 'Lorient';
+UPDATE villes SET nb_hab = 89105   WHERE nom_ville = 'Dunkerque';
+
+-- Villes complémentaires
+UPDATE villes SET nb_hab = 62000  WHERE nom_ville = 'Pessac';
+UPDATE villes SET nb_hab = 44952  WHERE nom_ville = 'Talence';
+UPDATE villes SET nb_hab = 40520  WHERE nom_ville = 'Arras';
+UPDATE villes SET nb_hab = 8200   WHERE nom_ville = 'Aulnoy-lez-Valenciennes';
+UPDATE villes SET nb_hab = 25000  WHERE nom_ville = 'La Garde';
+UPDATE villes SET nb_hab = 20000  WHERE nom_ville = 'Mont-Saint-Aignan';
+UPDATE villes SET nb_hab = 7500   WHERE nom_ville = 'Corte';
+
+-- Autres villes présentes en BDD
+UPDATE villes SET nb_hab = 113835 WHERE nom_ville = 'Grenoble';
+UPDATE villes SET nb_hab = 108901 WHERE nom_ville = 'Metz';
+UPDATE villes SET nb_hab = 104321 WHERE nom_ville = 'Nancy';
+UPDATE villes SET nb_hab = 98814  WHERE nom_ville = 'Rouen';
+UPDATE villes SET nb_hab = 42000  WHERE nom_ville = 'Bastia';
+
 -- 1. Les Mégapoles & Grandes Métropoles
 UPDATE villes SET score_transport = 95, nb_lignes_transport = 350, nb_arrets_transport = 12000, km_lignes_transport = 1800 WHERE nom_ville = 'Paris';
 UPDATE villes SET score_transport = 88, nb_lignes_transport = 130, nb_arrets_transport = 3500, km_lignes_transport = 600 WHERE nom_ville = 'Lyon';
