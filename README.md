@@ -70,6 +70,20 @@ Validez votre email et connectez-vous au Dashboard.
 
 La clé est directement disponible sur le dashboard.
 
+C. France Travail (Offres d'emploi)
+Rendez-vous sur francetravail.io.
+Cliquez sur "S'inscrire" et créez votre compte avec votre adresse email.
+Une fois connecté, accédez à "Mes applications" puis cliquez sur "Créer une application" (ex: "StudyMap").
+Dans votre application, cliquez sur "Ajouter une API" et souscrivez à "Offres d'emploi v2".
+Vos clés Client ID et Client Secret sont disponibles dans le tableau de bord de votre application.
+Copiez ces deux clés et ajoutez-les dans votre fichier .env :
+bashFRANCE_TRAVAIL_CLIENT_ID=votre_client_id
+FRANCE_TRAVAIL_CLIENT_SECRET=votre_client_secret
+
+⚠️ Note : France Travail utilise OAuth2. Un token d'accès est généré automatiquement par le backend avant chaque appel — vous n'avez pas à vous en occuper manuellement.
+
+
+
 4. Configuration des environnements 🛡️
 
 Côté Backend (Racine) :
@@ -132,13 +146,13 @@ curl -X POST http://localhost:3000/api/universites/sync
 curl -X POST http://localhost:3000/api/restau-univ/sync
 ```
 
-Pour peupler les données concernant les transports :
+Pour peupler les données concernant les transports et les habitants :
 
 Rendez-vous sur votre Dashboard Supabase > SQL Editor.
 
 Cliquez sur "New Query".
 
-Ouvrez le fichier database/peuplementScore.sql situé dans ce projet.
+Ouvrez le fichier database/peuplement.sql situé dans ce projet.
 
 Copiez le code, collez-le dans l'éditeur Supabase et cliquez sur Run.
 
