@@ -1,0 +1,95 @@
+<!-- Menu de filtres avec bouton deroulant -->
+<div class="filtre-container">
+    <!-- Bouton pour ouvrir/fermer le menu -->
+    <button class="filtre-btn" (click)="clicBouton()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+        Filtres
+    </button>
+
+   <!-- Menu deroulant des options de filtre -->
+   <div class="filtre-menu" [class.active]="isMenuActive()">
+        <div class="filtre-groupe">
+        
+        <!-- Options de filtre pour la page Accueil -->
+        @if (menus() === 'accueil') {
+            <p id="titre-filtre">Découvrir par :</p>
+        
+
+            <label class="options">
+                <input type="radio" name="option-accueil" value="itineraire" (change)="onOptionChange($event)">
+                <span>📍 Autour de moi</span>
+            </label>
+            <ng-container *ngIf="geoError()">
+                <div class="geo-error">{{ geoError() }}</div>
+                <button (click)="userLocationService.requestLocation(true)" class="btn-relance-geo">
+                    Autoriser la géolocalisation
+                </button>
+            </ng-container>
+
+            <label class="options">
+                <input type="radio" name="option-accueil" (change)="onOptionChange($event)" value="mer">
+                <span>🏖️ Bord de mer</span>
+            </label>
+
+            <label class="options">
+                <input type="radio" name="option-accueil" (change)="onOptionChange($event)" value="montagne">
+                <span>🏔️ Montagne</span>
+            </label>
+
+            <label class="options">
+                <input type="radio" name="option-accueil" (change)="onOptionChange($event)" value="meteo">
+                <span>🌦️ Météo / Ensoleillement</span>
+            </label>
+        }
+
+        <!-- Options de filtre pour les pages Classement et Favoris -->
+        @if(menus() === 'classement' || menus() === 'favoris'){
+            <p id="titre-filtre">Trier par priorité :</p>
+
+            <label class="options">
+                <input type="radio" name="option-tri" value="itineraire" (change)="onOptionChange($event)">
+                <span>📍 Autour de moi</span>
+            </label>
+            
+            <label class="options">
+                <input type="radio" name="option-tri" value="budget" (change)="onOptionChange($event)">
+                <span>💶 Loyer le moins cher</span>
+                
+                <div class="slider-container">
+                    <p style="font-size: 12px; margin-bottom: 5px; text-align: center;">
+                        {{ budgetMin() }}€ - {{budgetMax()}}€{{ budgetMax() == 5000? '+' : ''}}
+                    </p>
+                    <div class="sliderBudget">
+                        <div class="slider-track"></div>
+                        <input type="range" [value]="budgetMin()" min="0" max="5000" step="10" (input)="updateMin($event)" class="input-min">
+                        <input type="range" [value]="budgetMax()" min="0" max="5000" step="10" (input)="updateMax($event)" class="input-max">
+                    </div>
+                    <div style="margin-top: 10px; text-align: center;">
+                        <label for="surface" style="font-size: 12px;">Surface&nbsp;:</label>
+                        <input id="surface" type="number" min="10" max="200" step="1" [value]="surface()" (input)="surface.set($event.target.valueAsNumber)" style="width: 60px;">&nbsp;m²
+                    </div>
+                </div>
+            </label>
+
+            <label class="options">
+                <input type="radio" name="option-tri" value="emploi" (change)="onOptionChange($event)">
+                <span>💼 Emploi et Attractivité</span>
+            </label>
+
+            <label class="options">
+                <input type="radio" name="option-tri" value="transport" (change)="onOptionChange($event)">
+                <span>🚆 Qualité des transports</span>
+            </label>
+
+            <label class="options">
+                <input type="radio" name="option-tri" value="vieNocturne" (change)="onOptionChange($event)">
+                <span>🍻 Bars et Vie nocturne</span>
+            </label>
+        }
+        </div>
+        <!-- Bouton Valider -->
+        <div id="btnValider">
+            <button class="btn-valider" (click)="validerFiltre()">Valider</button>
+        </div>
+    </div>
+</div>

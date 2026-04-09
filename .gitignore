@@ -26,7 +26,6 @@ yarn-error.log
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-!.vscode/mcp.json
 .history/*
 
 # Miscellaneous
@@ -42,3 +41,17 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Ignorer les fichiers de configuration Angular contenant des clés
+src/environments/environment.ts
+src/environments/environment.prod.ts
+src/environments/environment.development.ts
+
+# Ignorer aussi les fichiers de variables d'environnement classiques
+.env
+.env.local
+
+
+# --- TEMPLATES A NE PAS IGNORER ---
+!.env.example
+!src/environments/environment.template.ts

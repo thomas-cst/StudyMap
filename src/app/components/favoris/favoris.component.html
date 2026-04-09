@@ -1,0 +1,15 @@
+<!-- Page favoris avec recherche, filtres et affichage des villes favorites -->
+<div class="favoris">
+    <!-- Zone de recherche et filtres -->
+    <div class="recherches">
+        <app-searchBar [query]="query" (search)="onSearch($event)"></app-searchBar>
+        
+        <app-filtre [menus]="'favoris'" (onFiltreChange)="onFiltreChange($event)"></app-filtre>
+        
+    </div> 
+    <h2>Favoris</h2>
+    <!-- Grille des villes favorites -->
+    <div class="resultats">
+        <app-favoris-display [query]="query" [filtreActuel]="filtreActuel()"></app-favoris-display>
+    </div>
+</div>

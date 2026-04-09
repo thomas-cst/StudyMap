@@ -1,0 +1,488 @@
+/* Styles du composant Resultats */
+/* Grille de cartes de villes avec mode normal et agrandi, animations */
+:host {
+    display: block;
+    width: 100%;
+}
+
+.resultats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.loading {
+    grid-column: span 2;
+    text-align: center;
+    padding: 50px;
+    font-size: 18px;
+    color: #666;
+}
+
+/* Grille de résultats */
+.ville-card {
+    width: 100%;
+    height: 250px;
+    border-radius: 12px;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    position: relative;
+}
+
+/* Image de fond lazy-loaded */
+.ville-card-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+}
+
+/* Carte agrandie */
+.ville-card.expanded {
+    grid-column: span 2;
+    height: 500px;
+}
+
+.ville-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, transparent 40%, rgba(47, 65, 86, 0.8) 100%);
+    pointer-events: none;
+}
+
+.ville-card.expanded::before {
+    display: none;
+}
+
+.ville-overlay {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    padding: 20px;
+    color: white;
+    text-align: center;
+}
+
+.ville-card h4 {
+    margin: 0;
+    font-size: 1.3em;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.ville-card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.ville-card.expanded:hover {
+    transform: none;
+}
+
+/* Mode agrandis : contenu des détails */
+.expanded-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%);
+    position: relative;
+    z-index: 3;
+    padding: 30px;
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.expanded-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #2F4156;
+    padding-bottom: 15px;
+}
+
+.expanded-header h2 {
+    margin: 0;
+    color: #2F4156;
+    font-size: 2.2em;
+}
+
+.expanded-title-block {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.ville-meta {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    color: #667788;
+    font-size: 0.95em;
+    flex-wrap: wrap;
+}
+
+.btn-collapse {
+    background-color: #2F4156;
+    color: white;
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.btn-collapse:hover {
+    background-color: #1a2a3a;
+    transform: scale(1.1);
+}
+
+.minus-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.expanded-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.unis-loading, .unis-empty {
+    color: #888;
+    font-size: 1em;
+    text-align: center;
+    padding: 20px 0;
+}
+
+/* Carte université */
+.uni-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 14px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.uni-card-wrap {
+    display: flex;
+    flex-direction: column;
+}
+
+.uni-card:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.uni-card {
+    cursor: pointer;
+}
+
+.uni-card.open {
+    border: 1px solid #cfd8e1;
+}
+
+.uni-image {
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.uni-placeholder {
+    width: 70px;
+    height: 70px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    background: #e0e4e8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.uni-placeholder svg {
+    width: 32px;
+    height: 32px;
+    color: #8899aa;
+}
+
+.uni-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.uni-toggle-btn {
+    border: none;
+    background: #2F4156;
+    color: #fff;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 0.8em;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.uni-toggle-btn:hover {
+    background: #1f3143;
+}
+
+.uni-info h4 {
+    margin: 0 0 4px;
+    font-size: 1em;
+    font-weight: 600;
+    color: #2F4156;
+    text-shadow: none;
+}
+
+.uni-link {
+    color: #2F4156;
+    text-decoration: none;
+    transition: color 0.2s;
+
+    &:hover {
+        color: #567C8E;
+        text-decoration: underline;
+    }
+}
+
+.uni-students {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.85em;
+    color: #667788;
+}
+
+.icon-small {
+    width: 16px;
+    height: 16px;
+}
+
+/* Badge filtre actif - haut gauche */
+.filter-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 3;
+    background: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 12px;
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+}
+
+/* Bouton Favoris (coeur) - haut à droite */
+.btn-favoris {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    padding: 0;
+}
+
+.btn-favoris:hover {
+    transform: scale(1.1);
+    background-color: rgba(255, 255, 255, 1);
+}
+
+.btn-favoris .heart-icon {
+    width: 20px;
+    height: 20px;
+    color: #e74c3c;
+    stroke: currentColor;
+    stroke-width: 0.5;
+}
+
+.btn-favoris.active .heart-icon {
+    fill: #e74c3c;
+}
+
+.btn-favoris:not(.active) .heart-icon {
+    fill: none;
+    stroke-width: 1.5;
+}
+
+/* Bouton Détails (+) - bas à droite */
+.btn-details {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    z-index: 10;
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    padding: 0;
+}
+
+.btn-details:hover {
+    transform: scale(1.1);
+    background-color: rgba(255, 255, 255, 1);
+}
+
+.btn-details .plus-icon {
+    width: 22px;
+    height: 22px;
+    color: #2F4156;
+}
+
+/* Modal pour agrandissement */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 16px;
+    overflow: hidden;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    position: relative;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    transition: background-color 0.2s ease;
+}
+
+.modal-close:hover {
+    background-color: rgba(255, 255, 255, 1);
+}
+
+.modal-image {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+}
+
+.modal-content h2 {
+    padding: 20px 20px 10px;
+    margin: 0;
+    color: #2F4156;
+    font-size: 1.8em;
+}
+
+.modal-content p {
+    padding: 0 20px 20px;
+    margin: 0;
+    color: #666;
+    font-size: 1em;
+}
+
+
+.card {
+    width: 50%;
+    height: 300px;
+    background-color: var(--bg-dark-blue);
+    border-radius: 20px;
+    transition: transform 0.2s;
+
+    //taille spécifique dans les menus
+    &.classement {
+        width: 100%;
+        height: 150px;
+    }
+
+    &.favoris {
+        width: 100%;
+        height: 150px;
+    }
+
+    &.accueil {
+        width: calc(50% - 10px);
+        height : 300px;
+    }
+
+}
+
+.card:hover {
+    transform: scale(1.02);
+}
