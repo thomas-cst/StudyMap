@@ -21,6 +21,10 @@ export class ItineraireCardComponent implements OnChanges {
   /** URL Google Maps générée à partir des coordonnées */
   mapsUrl = '';
 
+  /**
+   * Reconstruit l'URL Google Maps a chaque changement de coordonnees.
+   * L'URL genere un itineraire entre la position utilisateur et la ville destination.
+   */
   ngOnChanges(changes: SimpleChanges): void {
     if (this.userLat && this.userLng && this.villeLat && this.villeLng) {
       this.mapsUrl =

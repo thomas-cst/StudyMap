@@ -60,10 +60,12 @@ export class App implements OnInit {
   ngOnInit() {
   }
 
+  /** Ouvre ou ferme la popup de connexion/compte */
   protected toggleCompte() {
     this.showCompte.set(!this.showCompte());
   }
 
+  /** Ferme la popup de connexion/compte */
   protected closeCompte() {
     this.showCompte.set(false);
   }
@@ -94,14 +96,17 @@ export class App implements OnInit {
     }
   }
 
+  /** Bascule l'onglet actif vers la vue des favoris */
   protected afficherFavoris() {
     this.componentActif.set('favoris');
   }
 
+  /** Bascule l'onglet actif vers la vue d'accueil */
   protected afficherAccueil() {
     this.componentActif.set('accueil');
   }
 
+  /** Bascule l'onglet actif vers la vue du classement */
   protected afficherClassement() {
     this.componentActif.set('classement');
   }

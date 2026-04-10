@@ -96,10 +96,20 @@ const API_DELAY = 100;
 // UTILITAIRES
 // ====================================================
 
+/**
+ * Pause l'execution pour eviter le rate-limiting des APIs externes
+ * @param {number} ms - Duree de la pause en millisecondes
+ */
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/**
+ * Effectue une requete HTTP(S) GET generique avec timeout et gestion d'erreur
+ * @param {string} url - URL a appeler
+ * @param {Object} options - Options supplementaires (ex: headers)
+ * @returns {Promise<Object|null>} La reponse JSON parsee, ou null en cas d'erreur
+ */
 function makeRequest(url, options = {}) {
   return new Promise((resolve) => {
     const isHttps = url.startsWith('https');
@@ -150,6 +160,11 @@ function makeRequest(url, options = {}) {
 // WIKIPEDIA - Images
 // ====================================================
 
+/**
+ * Recupere l'URL d'image d'une ville via l'API Wikipedia (thumbnail 600px)
+ * @param {string} nomVille - Nom de la ville dont on cherche l'image
+ * @returns {Promise<string|null>} URL du thumbnail, ou null si aucune image trouvee
+ */
 async function fetchImageFromWikipedia(nomVille) {
   try {
     // Format: ["search", [titles], [descriptions], [urls]]
@@ -199,6 +214,12 @@ async function fetchImageFromWikipedia(nomVille) {
 // WIKIDATA - Population & Gentilé
 // ====================================================
 
+/**
+ * Extrait la population depuis les claims Wikidata (propriete P1082)
+ * Parcourt toutes les valeurs de la propriete et retourne la premiere valeur numerique valide.
+ * @param {Object} claims - Objet claims d'une entite Wikidata
+ * @returns {number|null} La population arrondie, ou null si non trouvee
+ */
 function parseWikidataPopulation(claims) {
   const populationClaims = claims?.P1082;
   if (!populationClaims?.length) return null;
@@ -214,6 +235,11 @@ function parseWikidataPopulation(claims) {
   return null;
 }
 
+/**
+ * Recherche l'identifiant Wikidata d'une commune via son code INSEE (propriete P374)
+ * @param {string} codeInsee - Code INSEE de la commune
+ * @returns {Promise<string|null>} L'identifiant Wikidata (ex: "Q90"), ou null si non trouve
+ */
 async function fetchWikidataEntityIdByInsee(codeInsee) {
   if (!codeInsee) return null;
 
@@ -244,6 +270,12 @@ async function fetchWikidataEntityIdByInsee(codeInsee) {
   }
 }
 
+/**
+ * Selectionne l'entite Wikidata la plus pertinente parmi les resultats de recherche.
+ * Score selon la description : "commune" ou "ville" en France obtient le meilleur score.
+ * @param {Array} searchResults - Resultats de recherche Wikidata
+ * @returns {Object|null} L'entite Wikidata la mieux notee, ou null si aucun resultat
+ */
 function pickBestWikidataCityEntity(searchResults) {
   if (!Array.isArray(searchResults) || !searchResults.length) return null;
 
@@ -260,6 +292,13 @@ function pickBestWikidataCityEntity(searchResults) {
   return scored[0]?.item || null;
 }
 
+/**
+ * Recupere la population d'une ville via Wikidata.
+ * Cherche d'abord par code INSEE, puis par nom si non trouve.
+ * @param {string} nomVille - Nom de la ville
+ * @param {string|null} codeInsee - Code INSEE (ameliore la precision de la recherche)
+ * @returns {Promise<{nb_hab: number}|null>} Objet avec la population, ou null si non trouve
+ */
 async function fetchPopulationFromWikidata(nomVille, codeInsee = null) {
   try {
     let entityId = await fetchWikidataEntityIdByInsee(codeInsee);
@@ -290,6 +329,11 @@ async function fetchPopulationFromWikidata(nomVille, codeInsee = null) {
 // OPEN-METEO - Coordonnées
 // ====================================================
 
+/**
+ * Recupere les coordonnees GPS d'une ville via l'API Open-Meteo Geocoding
+ * @param {string} nomVille - Nom de la ville
+ * @returns {Promise<{latitude: number, longitude: number}|null>} Coordonnees ou null si non trouve
+ */
 async function fetchCoordinatesFromOpenMeteo(nomVille) {
   try {
     const url = `${OPENMETEO_GEOCODING_URL}?name=${encodeURIComponent(nomVille)}&country=France&language=fr&limit=1`;
@@ -314,6 +358,11 @@ async function fetchCoordinatesFromOpenMeteo(nomVille) {
 // COG API - Code INSEE
 // ====================================================
 
+/**
+ * Recupere le code INSEE d'une ville via l'API COG (Code Officiel Geographique)
+ * @param {string} nomVille - Nom de la ville
+ * @returns {Promise<string|null>} Le code INSEE ou null si non trouve
+ */
 async function fetchCodeInseeFromCOG(nomVille) {
   try {
     const url = `${COG_API_URL}${encodeURIComponent(nomVille.toUpperCase())}`;
@@ -334,6 +383,12 @@ async function fetchCodeInseeFromCOG(nomVille) {
 // PARSE ESR
 // ====================================================
 
+/**
+ * Extrait et deduplique les villes depuis les resultats de l'API ESR.
+ * Retire les arrondissements (ex: "Paris 1er") et les villes d'outre-mer.
+ * @param {Array} results - Tableau d'etablissements retournes par l'API ESR
+ * @returns {Array} Liste des villes uniques avec leurs donnees de base
+ */
 function parseVillesFromESR(results) {
   const villesMap = new Map();
 
@@ -363,6 +418,10 @@ function parseVillesFromESR(results) {
 // FETCH FROM APIs
 // ====================================================
 
+/**
+ * Appelle l'API ESR pour recuperer la liste des etablissements universitaires
+ * @returns {Promise<Array>} Liste des villes extraites de l'API, ou tableau vide en cas d'erreur
+ */
 async function fetchVillesFromESR() {
   try {
     console.log('📡 Appel API ESR...');
@@ -397,6 +456,12 @@ async function fetchVillesFromESR() {
   }
 }
 
+/**
+ * Enrichit une ville avec les donnees manquantes (coordonnees, code INSEE, image, population).
+ * Appelle les APIs externes uniquement si la donnee est absente.
+ * @param {Object} ville - Objet ville a enrichir (modifie en place)
+ * @returns {Promise<Object>} L'objet ville enrichi
+ */
 async function enrichVille(ville) {
   console.log(`⏳ Enrichissement: ${ville.nom_ville}...`);
 
@@ -444,6 +509,12 @@ async function enrichVille(ville) {
 // DATABASE OPERATIONS (Supabase)
 // ====================================================
 
+/**
+ * Cherche une ville dans Supabase par nom (et code INSEE si fourni)
+ * @param {string} nomVille - Nom de la ville
+ * @param {string|null} codeInsee - Code INSEE pour une recherche plus precise
+ * @returns {Promise<Object|null>} La ville trouvee ou null
+ */
 async function getVilleFromDB(nomVille, codeInsee = null) {
   try {
     let query = supabase.from('villes').select('*').eq('nom_ville', nomVille);
@@ -466,6 +537,12 @@ async function getVilleFromDB(nomVille, codeInsee = null) {
   }
 }
 
+/**
+ * Insere ou met a jour une ville dans Supabase (upsert).
+ * Si la ville existe deja, met a jour uniquement les champs non nuls.
+ * @param {Object} ville - Objet ville a sauvegarder
+ * @returns {Promise<boolean>} true si l'operation a reussi, false sinon
+ */
 async function saveOrUpdateVilleInDB(ville) {
   try {
     const existing = await getVilleFromDB(ville.nom_ville, ville.code_insee);
@@ -507,6 +584,11 @@ async function saveOrUpdateVilleInDB(ville) {
   }
 }
 
+/**
+ * Recupere toutes les villes de la base de donnees triees par nom
+ * @param {number} limit - Nombre maximum de villes a retourner (defaut: 200)
+ * @returns {Promise<Array>} Liste des villes
+ */
 async function getAllVillesFromDB(limit = 200) {
   try {
     const { data, error } = await supabase
@@ -527,6 +609,11 @@ async function getAllVillesFromDB(limit = 200) {
   }
 }
 
+/**
+ * Recupere une ville par son identifiant Supabase
+ * @param {number} villeId - ID de la ville dans la table villes
+ * @returns {Promise<Object|null>} La ville trouvee ou null
+ */
 async function getVilleByIdFromDB(villeId) {
   try {
     const { data, error } = await supabase
@@ -551,6 +638,12 @@ async function getVilleByIdFromDB(villeId) {
 // MAIN LOGIC: BD FIRST
 // ====================================================
 
+/**
+ * Strategie BD-first : retourne une ville depuis Supabase si elle existe,
+ * sinon l'enrichit via les APIs externes et la sauvegarde.
+ * @param {string} nomVille - Nom de la ville recherchee
+ * @returns {Promise<Object>} La ville avec sa source ('database' ou 'api')
+ */
 async function getOrFetchVille(nomVille) {
   console.log(`🔍 Recherche: ${nomVille}`);
 
@@ -583,6 +676,12 @@ async function getOrFetchVille(nomVille) {
   return { ...nouvelleVille, source: 'api' };
 }
 
+/**
+ * Synchronisation complete : recupere toutes les villes universitaires depuis l'API ESR,
+ * les enrichit via Wikipedia/Wikidata/OpenMeteo et les sauvegarde dans Supabase.
+ * Calcule aussi le nombre total d'etudiants par ville depuis les universites.
+ * @returns {Promise<Array>} Liste des villes enrichies et sauvegardees
+ */
 async function syncVillesComplete() {
   console.log('🔄 SYNC: Synchronisation complète...');
 

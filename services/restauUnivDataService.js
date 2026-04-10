@@ -24,6 +24,11 @@ const API_TIMEOUT = 10000;
 // UTILITAIRES
 // ====================================================
 
+/**
+ * Effectue une requete HTTPS GET avec timeout et gestion d'erreur
+ * @param {string} url - URL a appeler
+ * @returns {Promise<Object|null>} La reponse JSON parsee, ou null en cas d'erreur ou timeout
+ */
 function makeRequest(url) {
   return new Promise((resolve) => {
     const parsedUrl = new URL(url);
@@ -79,6 +84,12 @@ function distanceKm(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/**
+ * Convertit une valeur en nombre, retourne null si la conversion est impossible
+ * Utile pour les coordonnees qui peuvent etre des chaines vides dans l'API CROUS
+ * @param {*} value - Valeur a convertir
+ * @returns {number|null} Le nombre converti ou null
+ */
 function toNumber(value) {
   if (value === null || value === undefined || value === '') return null;
   const parsed = Number(value);
@@ -144,6 +155,11 @@ function parseRestaurants(records) {
 // DATABASE OPERATIONS
 // ====================================================
 
+/**
+ * Recupere tous les restaurants universitaires avec le nom de leur universite associee
+ * @param {number} limit - Nombre maximum de restaurants a retourner (defaut: 500)
+ * @returns {Promise<Array>} Liste des restaurants
+ */
 async function getAllRestauFromDB(limit = 500) {
   const { data, error } = await supabase
     .from('restau_universitaires')
@@ -158,6 +174,11 @@ async function getAllRestauFromDB(limit = 500) {
   return data || [];
 }
 
+/**
+ * Recupere les restaurants universitaires d'une universite specifique
+ * @param {number} universiteId - ID de l'universite
+ * @returns {Promise<Array>} Liste des restaurants de l'universite, tries par nom
+ */
 async function getRestauByUniversiteId(universiteId) {
   const { data, error } = await supabase
     .from('restau_universitaires')
@@ -172,6 +193,11 @@ async function getRestauByUniversiteId(universiteId) {
   return data || [];
 }
 
+/**
+ * Insere ou met a jour un restaurant universitaire dans Supabase (upsert par nom)
+ * @param {Object} restau - Objet restaurant avec nom, adresse et universite_id
+ * @returns {Promise<boolean>} true si l'operation a reussi, false sinon
+ */
 async function saveOrUpdateRestau(restau) {
   const { data: existing } = await supabase
     .from('restau_universitaires')
@@ -393,6 +419,12 @@ function findBestUniversite(restau, villeMap, univsByVille, villesById) {
 // SYNC LOGIC
 // ====================================================
 
+/**
+ * Synchronisation complete des restaurants universitaires depuis l'API CROUS.
+ * Recupere les restaurants, les associe aux universites via geolocalisation (Haversine),
+ * puis les sauvegarde dans Supabase.
+ * @returns {Promise<Array>} Liste complete des restaurants apres synchronisation
+ */
 async function syncRestauUniv() {
   console.log('🍽️  SYNC RESTAURANTS UNIVERSITAIRES: Démarrage...');
 

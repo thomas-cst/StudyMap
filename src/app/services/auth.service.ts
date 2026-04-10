@@ -109,6 +109,12 @@ export class AuthService {
     }
   }
 
+  /**
+   * Inscrit un nouvel utilisateur avec email et mot de passe
+   * @param email - Adresse email du nouvel utilisateur
+   * @param password - Mot de passe choisi (doit respecter les contraintes Supabase)
+   * @returns L'utilisateur cree et une eventuelle erreur
+   */
   async signUp(email: string, password: string): Promise<{ user: User | null; error: any }> {
     const { data, error } = await this.supabase.auth.signUp({ email, password });
     if (!error && data.user) {
@@ -117,11 +123,21 @@ export class AuthService {
     return { user: data.user ?? null, error };
   }
 
+  /**
+   * Connecte un utilisateur existant avec email et mot de passe
+   * @param email - Adresse email de l'utilisateur
+   * @param password - Mot de passe de l'utilisateur
+   * @returns L'utilisateur connecte et une eventuelle erreur
+   */
   async signIn(email: string, password: string): Promise<{ user: User | null; error: any }> {
     const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
     return { user: data.user ?? null, error };
   }
 
+  /**
+   * Initie la connexion OAuth via Google (redirige vers la page Google)
+   * @returns Une eventuelle erreur si l'initialisation OAuth echoue
+   */
   async loginWithGoogle(): Promise<{ error: any }> {
     const { error } = await this.supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -132,6 +148,10 @@ export class AuthService {
     return { error };
   }
 
+  /**
+   * Deconnecte l'utilisateur (Supabase + suppression du cache localStorage)
+   * @returns Une eventuelle erreur si la deconnexion echoue
+   */
   async logout(): Promise<{ error: any }> {
     const { error } = await this.supabase.auth.signOut();
     localStorage.removeItem('currentUser');
@@ -139,14 +159,20 @@ export class AuthService {
     return { error };
   }
 
+  /** Retourne l'utilisateur actuellement connecte, ou null s'il n'y en a pas */
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
   }
 
+  /** Retourne true si un utilisateur est connecte */
   isAuthenticated(): boolean {
     return this.currentUserSubject.value !== null;
   }
 
+  /**
+   * Attend que la session Supabase soit completement chargee avant de continuer.
+   * Utile pour eviter les conditions de course au demarrage de l'application.
+   */
   async ensureSessionLoaded(): Promise<void> {
     return this.sessionLoadedPromise;
   }

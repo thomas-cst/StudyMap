@@ -27,12 +27,15 @@ import { FiltreComponent } from '../filtre/filtre.component';
 export class AccueilComponent {
   /** Terme de recherche actuellement saisi */
   searchTerm = signal('');
+  /** Filtre actuellement selectionne (transmis au composant de resultats) */
   filtreActuel = signal('');
 
+  /** Met a jour le terme de recherche avec la ville saisie */
   onSearch(city: string) {
     this.searchTerm.set(city);
   }
 
+  /** Met a jour le filtre selectionne */
   onFiltreChange(filtre: string) {
     this.filtreActuel.set(filtre);
   }

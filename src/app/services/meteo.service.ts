@@ -1,3 +1,7 @@
+/**
+ * Service MeteoService - Recupere les previsions meteorologiques via l'API Open-Meteo
+ * Fournit les donnees de temperature et code meteo pour les 7 prochains jours.
+ */
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -8,7 +12,12 @@ export class MeteoService {
 
   constructor(private http: HttpClient) {}
 
-  /** Prévisions météo journalières pour la semaine (7 jours) */
+  /**
+   * Previsions meteo journalieres pour les 7 prochains jours
+   * @param lat - Latitude de la ville
+   * @param lon - Longitude de la ville
+   * @returns Observable avec temperature max/min et code meteo par jour
+   */
   getMeteoSemaine(lat: number, lon: number): Observable<any> {
     return this.http.get<any>(
       `${this.apiUrl}?latitude=${lat}&longitude=${lon}` +

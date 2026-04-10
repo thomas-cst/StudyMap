@@ -9,14 +9,24 @@ export interface RestaurantUniversitaire {
   universite_id: number;
 }
 
+/**
+ * Service RestauUnivService - Recupere les restaurants universitaires (RU) par universite
+ * Utilise un cache memoire par universite pour eviter les requetes redondantes.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class RestauUnivService {
+  /** Cache memoire des restaurants par universite_id */
   private cache: { [universiteId: number]: RestaurantUniversitaire[] } = {};
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * Recupere les restaurants universitaires lies a une universite (avec cache memoire)
+   * @param universiteId - ID de l'universite dont on veut les restaurants
+   * @returns Observable de la liste des restaurants de l'universite
+   */
   getByUniversiteId(universiteId: number): Observable<RestaurantUniversitaire[]> {
     if (!universiteId) return of([]);
     if (this.cache[universiteId]) {

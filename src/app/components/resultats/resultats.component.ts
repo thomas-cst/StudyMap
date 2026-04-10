@@ -71,7 +71,7 @@ export class ResultatsComponent implements OnChanges, OnInit {
   private authPopupService = inject(AuthPopupService);
   /** Reference de destruction pour nettoyer les subscriptions RxJS */
   private destroyRef = inject(DestroyRef);
-  /** Service ... */
+  /** Service de previsions meteorologiques */
   private meteoService = inject(MeteoService);
 
   /** Liste de toutes les villes chargees depuis le backend */
@@ -198,6 +198,8 @@ export class ResultatsComponent implements OnChanges, OnInit {
           this.lastZoomedVille.set(matching.code);
           this.expandAndZoom(matching);
           this.loadUniversites(matching);
+          this.loadItineraire(matching);
+          this.loadMeteo(matching);
         }
       }
     });
@@ -530,12 +532,14 @@ export class ResultatsComponent implements OnChanges, OnInit {
     return this.expandedVille()?.code === ville.code;
   }
 
+  /** Affiche ou masque la liste des restaurants d'une universite */
   toggleUniversiteRestaurants(universiteId: number): void {
     this.expandedUniversiteId.set(
       this.expandedUniversiteId() === universiteId ? null : universiteId
     );
   }
 
+  /** Verifie si les restaurants d'une universite sont actuellement affiches */
   isUniversiteExpanded(universiteId: number): boolean {
     return this.expandedUniversiteId() === universiteId;
   }

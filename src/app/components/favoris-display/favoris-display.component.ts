@@ -432,17 +432,23 @@ if (typeof currentFiltre === 'object' && currentFiltre !== null && currentFiltre
     return this.expandedVille()?.code === ville.code;
   }
 
+  /** Affiche ou masque la liste des restaurants d'une universite */
   toggleUniversiteRestaurants(universiteId: number): void {
     this.expandedUniversiteId.set(
       this.expandedUniversiteId() === universiteId ? null : universiteId
     );
   }
 
+  /** Verifie si les restaurants d'une universite sont actuellement affiches */
   isUniversiteExpanded(universiteId: number): boolean {
     return this.expandedUniversiteId() === universiteId;
   }
 
-  /** encode URI pour les URLs */
+  /**
+   * Encode une chaine pour utilisation dans les URLs (wrapper global pour le template)
+   * @param str - Chaine a encoder
+   * @returns La chaine encodee en URI
+   */
   encodeURIComponent(str: string): string {
     return encodeURIComponent(str);
   }

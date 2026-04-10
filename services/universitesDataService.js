@@ -27,10 +27,19 @@ const API_DELAY = 150;
 // UTILITAIRES
 // ====================================================
 
+/**
+ * Pause l'execution pour eviter le rate-limiting des APIs externes
+ * @param {number} ms - Duree de la pause en millisecondes
+ */
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/**
+ * Effectue une requete HTTPS GET avec timeout et gestion d'erreur
+ * @param {string} url - URL a appeler
+ * @returns {Promise<Object|null>} La reponse JSON parsee, ou null en cas d'erreur ou timeout
+ */
 function makeRequest(url) {
   return new Promise((resolve) => {
     const req = https.get(url, {
@@ -304,6 +313,12 @@ async function saveOrUpdateUniversite(univ) {
 // SYNC LOGIC
 // ====================================================
 
+/**
+ * Synchronisation complete des universites depuis l'API ESR.
+ * Recupere les etablissements, resout les ville_id, recupere les images via Wikidata
+ * (batch) puis Wikipedia en fallback, et sauvegarde chaque universite dans Supabase.
+ * @returns {Promise<{saved: number, skipped: number, total: number}>} Statistiques de la synchronisation
+ */
 async function syncUniversites() {
   console.log('🎓 SYNC UNIVERSITÉS: Démarrage...');
 
